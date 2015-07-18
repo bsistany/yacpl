@@ -262,6 +262,11 @@ Definition is_act_in_agreement (ac:act)(agr: agreement) : Prop :=
     | Agreement pr ass ps => is_act_in_policySet ac ps
   end.
 
+Definition is_asset_in_agreement (a: asset)(agr: agreement) : Prop :=
+  match agr with
+    | Agreement pr ass ps => ass = a
+  end.
+
 (* Example 2.1 *)
 
 
@@ -2756,6 +2761,96 @@ destruct sq as
 destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
 induction pol as [aPrimPolicy]. induction aPrimPolicy as [prq pid ac]. simpl.
 auto. Qed.
+
+Definition PermittedOrNotPermittedOrUnregulated (sq:single_query) :=
+  ((Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq)) \/
+   (Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq)) \/
+  ~(Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))).
+
+
+Theorem ActIsInAndAssetIsTheSameImpliesUnregulated_dec:
+  forall (sq:single_query),
+let trans_agr := 
+ (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) -> 
+   (Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))) in
+
+if (act_in_agreement_dec (get_Sq_Action sq) (get_Sq_Agreement sq))
+then
+ if (eq_nat_dec (get_Sq_Asset sq) (get_Asset_From_Agreement (get_Sq_Agreement sq)))
+ then
+   True 
+(* True to delay this case to later: 
+   replace with more if/else and PermittedOrNotPermittedOrUnregulated*)
+ else
+   trans_agr
+else
+   if (eq_nat_dec (get_Sq_Asset sq) (get_Asset_From_Agreement (get_Sq_Agreement sq)))
+ then
+   trans_agr
+ else
+   trans_agr.
+
+Proof.
+intros sq.
+simpl.
+
+destruct sq as 
+ [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
+destruct (act_in_agreement_dec action_from_query agr).
+destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
+destruct (eq_nat_dec asset_from_query asset_from_agreement).
+auto.
+destruct ps as [prim_policySet]. simpl.
+ 
+intros H.
+destruct H as [H1 H2].
+specialize H1 with asset_from_query action_from_query subject_from_query.
+
+apply H1. left. assumption.
+destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
+destruct (eq_nat_dec asset_from_query asset_from_agreement).
+destruct ps as [prim_policySet]. simpl.
+intros H.
+destruct H as [H1 H2].
+specialize H1 with asset_from_query action_from_query subject_from_query.
+apply H1. right. simpl in n. assumption.
+
+destruct ps as [prim_policySet]. simpl.
+intros H.
+destruct H as [H1 H2].
+specialize H1 with asset_from_query action_from_query subject_from_query.
+apply H1. right. simpl in n. assumption.
+
+Defined.
+
+
+Theorem Agreement_dec:
+  forall (sq:single_query),
+     (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) ->
+        PermittedOrNotPermittedOrUnregulated sq).
+Proof.
+intros sq.
+destruct sq as 
+ [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
+
+destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
+destruct ps as [prim_policySet]. simpl. 
+
+intros H.
+destruct H as [H1 H2].
+specialize H1 with asset_from_query action_from_query subject_from_query.
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 Theorem PermNotOrUnregulated:
