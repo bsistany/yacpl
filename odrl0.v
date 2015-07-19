@@ -2233,6 +2233,7 @@ Proof.
 intros e x const IDs prin_u. 
 unfold trans_notCons. apply trans_negation_constraint_dec. Defined.
   
+
 Theorem trans_preRequisite_dec :
   forall (e:environment)(x:subject)
     (prq:preRequisite)(IDs:nonemptylist policyId)(prin_u:prin),
@@ -2240,7 +2241,8 @@ Theorem trans_preRequisite_dec :
        {~ trans_preRequisite e x prq IDs prin_u}.
 Proof.
 intros e x prq IDs prin_u.
-induction prq.
+induction prq as [theTruePrq | theConst | theNotConst| 
+                  theAndPrqs | theOrPrqs | theXorPrqs].
 simpl. auto.
 simpl. apply trans_constraint_dec.
 simpl. apply trans_notCons_dec.
