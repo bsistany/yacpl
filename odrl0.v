@@ -2767,12 +2767,12 @@ Definition PermittedOrNotPermittedOrUnregulated (sq:single_query) :=
    (Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq)) \/
   ~(Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))).
 
+Definition trans_agr_implies_unregulated (sq:single_query) := 
+ (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) -> 
+   (Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))).
 
 Theorem ActIsInAndAssetIsTheSameImpliesUnregulated_dec:
   forall (sq:single_query),
-let trans_agr := 
- (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) -> 
-   (Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))) in
 
 if (act_in_agreement_dec (get_Sq_Action sq) (get_Sq_Agreement sq))
 then
@@ -2782,17 +2782,16 @@ then
 (* True to delay this case to later: 
    replace with more if/else and PermittedOrNotPermittedOrUnregulated*)
  else
-   trans_agr
+   (trans_agr_implies_unregulated sq)
 else
    if (eq_nat_dec (get_Sq_Asset sq) (get_Asset_From_Agreement (get_Sq_Agreement sq)))
  then
-   trans_agr
+   (trans_agr_implies_unregulated sq)
  else
-   trans_agr.
+   (trans_agr_implies_unregulated sq).
 
 Proof.
-intros sq.
-simpl.
+intros sq. simpl.
 
 destruct sq as 
  [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
