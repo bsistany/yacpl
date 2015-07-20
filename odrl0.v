@@ -2769,9 +2769,229 @@ Definition PermittedOrNotPermittedOrUnregulated (sq:single_query) :=
    (Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq)) \/
   ~(Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))).
 
-Definition trans_agr_implies_unregulated (sq:single_query) := 
+Definition trans_agr_implies_Unregulated (sq:single_query) := 
  (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) -> 
    (Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))).
+
+Definition trans_agr_implies_Permitted (sq:single_query) := 
+ (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) -> 
+   (Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))).
+
+Definition trans_agr_implies_NotPermitted (sq:single_query) := 
+ (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) -> 
+   (~Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))).
+
+
+
+
+Theorem blah_dec:
+  forall (sq:single_query),
+if (act_in_agreement_dec (get_Sq_Action sq) (get_Sq_Agreement sq))
+then (* act_in *)
+  if (eq_nat_dec (get_Sq_Asset sq) (get_Asset_From_Agreement (get_Sq_Agreement sq)))
+  then (* act_in / asset_same *)
+       
+        if (trans_prin_dec (get_Sq_Subject sq)
+             (get_Prin_From_Agreement ((get_Sq_Agreement sq))))
+        then
+           
+              if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                   (get_preRequisite_From_policySet 
+                     (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                   (get_IDs_From_policySet
+                     (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                   (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+              then
+                 
+                    if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                         (get_policy_preRequisite_From_policySet
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_IDs_From_policySet 
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+                    then
+                      (trans_agr_implies_Permitted sq)
+                    else
+                      (trans_agr_implies_Unregulated sq)
+
+              else
+                 
+                    if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                         (get_policy_preRequisite_From_policySet
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_IDs_From_policySet 
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+                    then
+                      (trans_agr_implies_Permitted sq)
+                    else
+                      (trans_agr_implies_Unregulated sq)
+
+
+        else
+          (match (get_PS_From_Agreement (get_Sq_Agreement sq)) with
+             | PPS pps =>
+               match pps with 
+                 | PIPS pips => (trans_agr_implies_Unregulated sq)         
+                 | PEPS peps => (trans_agr_implies_NotPermitted sq)
+               end
+           end) 
+
+
+  else (* act_in / ~asset_same *)
+       
+        if (trans_prin_dec (get_Sq_Subject sq)
+             (get_Prin_From_Agreement ((get_Sq_Agreement sq))))
+        then
+           
+              if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                   (get_preRequisite_From_policySet 
+                     (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                   (get_IDs_From_policySet
+                     (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                   (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+              then
+                 
+                    if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                         (get_policy_preRequisite_From_policySet
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_IDs_From_policySet 
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+                    then
+                      (trans_agr_implies_Permitted sq)
+                    else
+                      (trans_agr_implies_Unregulated sq)
+
+              else
+                 
+                    if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                         (get_policy_preRequisite_From_policySet
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_IDs_From_policySet 
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+                    then
+                      (trans_agr_implies_Permitted sq)
+                    else
+                      (trans_agr_implies_Unregulated sq)
+
+
+        else
+          (match (get_PS_From_Agreement (get_Sq_Agreement sq)) with
+             | PPS pps =>
+               match pps with 
+                 | PIPS pips => (trans_agr_implies_Unregulated sq)         
+                 | PEPS peps => (trans_agr_implies_NotPermitted sq)
+               end
+           end) 
+
+
+else (* ~act_in *)
+  if (eq_nat_dec (get_Sq_Asset sq) (get_Asset_From_Agreement (get_Sq_Agreement sq)))
+  then (* ~act_in / asset_same *)
+     
+        if (trans_prin_dec (get_Sq_Subject sq)
+             (get_Prin_From_Agreement ((get_Sq_Agreement sq))))
+        then
+           
+              if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                   (get_preRequisite_From_policySet 
+                     (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                   (get_IDs_From_policySet
+                     (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                   (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+              then
+                 
+                    if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                         (get_policy_preRequisite_From_policySet
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_IDs_From_policySet 
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+                    then
+                      (trans_agr_implies_Permitted sq)
+                    else
+                      (trans_agr_implies_Unregulated sq)
+
+              else
+                 
+                    if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                         (get_policy_preRequisite_From_policySet
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_IDs_From_policySet 
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+                    then
+                      (trans_agr_implies_Permitted sq)
+                    else
+                      (trans_agr_implies_Unregulated sq)
+
+
+        else
+          (match (get_PS_From_Agreement (get_Sq_Agreement sq)) with
+             | PPS pps =>
+               match pps with 
+                 | PIPS pips => (trans_agr_implies_Unregulated sq)         
+                 | PEPS peps => (trans_agr_implies_NotPermitted sq)
+               end
+           end) 
+
+
+  else (* ~act_in / ~asset_same *)
+     
+        if (trans_prin_dec (get_Sq_Subject sq)
+             (get_Prin_From_Agreement ((get_Sq_Agreement sq))))
+        then
+           
+              if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                   (get_preRequisite_From_policySet 
+                     (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                   (get_IDs_From_policySet
+                     (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                   (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+              then
+                 
+                    if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                         (get_policy_preRequisite_From_policySet
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_IDs_From_policySet 
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+                    then
+                      (trans_agr_implies_Permitted sq)
+                    else
+                      (trans_agr_implies_Unregulated sq)
+
+              else
+                 
+                    if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+                         (get_policy_preRequisite_From_policySet
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_IDs_From_policySet 
+                           (get_PS_From_Agreement (get_Sq_Agreement sq)))
+                         (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+                    then
+                      (trans_agr_implies_Permitted sq)
+                    else
+                      (trans_agr_implies_Unregulated sq)
+
+
+        else
+          (match (get_PS_From_Agreement (get_Sq_Agreement sq)) with
+             | PPS pps =>
+               match pps with 
+                 | PIPS pips => (trans_agr_implies_Unregulated sq)         
+                 | PEPS peps => (trans_agr_implies_NotPermitted sq)
+               end
+           end).
+Proof.
+Admitted.
+
+
+
+
+
 
 Theorem ActIsInAndAssetIsTheSameImpliesUnregulated_dec:
   forall (sq:single_query),
@@ -2784,13 +3004,13 @@ then
 (* True to delay this case to later: 
    replace with more if/else and PermittedOrNotPermittedOrUnregulated*)
  else
-   (trans_agr_implies_unregulated sq)
+   (trans_agr_implies_Unregulated sq)
 else
    if (eq_nat_dec (get_Sq_Asset sq) (get_Asset_From_Agreement (get_Sq_Agreement sq)))
  then
-   (trans_agr_implies_unregulated sq)
+   (trans_agr_implies_Unregulated sq)
  else
-   (trans_agr_implies_unregulated sq).
+   (trans_agr_implies_Unregulated sq).
 
 Proof.
 intros sq. simpl.
