@@ -1221,31 +1221,66 @@ Hypothesis H: trans_agreement eA2 AgreeA2.
 Theorem SS1: (Permitted Alice Print TheReport).
 Proof. simpl in H.
 
-destruct H as [H1 H2].
-specialize H2 with Alice. simpl in H2.
+simpl in H.
+specialize H with Alice TheReport Print.
 
+
+destruct (eq_nat_dec TheReport TheReport).
+destruct (eq_nat_dec Print Print).
+specialize H with Alice.
+destruct (Peano_dec.eq_nat_dec Alice Alice).
 destruct (trans_preRequisite_dec eA2 Alice TruePrq [id1] [Alice]).
 destruct (trans_preRequisite_dec eA2 Alice (Constraint (Count 5)) [id1] [Alice]).
-exact H2.
+exact H.
 assert (trans_preRequisite eA2 Alice (Constraint (Count 5)) [id1] [Alice]).
 simpl. unfold trans_count. omega. contradiction.
 assert (trans_preRequisite eA2 Alice TruePrq [id1] [Alice]).
-simpl. auto. contradiction. 
+simpl. auto. contradiction.
+assert (Alice=Alice). auto. contradiction.
+assert (Print=Print). auto. contradiction.
+assert (TheReport=TheReport). auto. contradiction.
+
 Qed.
 
+(*
 Hypothesis BobNotInPrin: not (trans_prin Bob (get_Prin_From_Agreement AgreeA2)).
 
 Theorem BobUnregulated: Unregulated Bob Print TheReport.
 Proof.
-simpl in H. 
+simpl in H.
+simpl in BobNotInPrin.
 
-destruct H as [H1 H2].
-specialize H2 with Bob. simpl in H2.
-
-destruct (trans_preRequisite_dec eA2 Bob TruePrq [id1] [Alice]).
-exact H2. exact H2. Qed.
+specialize H with Bob TheReport Print.
 
 
+destruct (eq_nat_dec TheReport TheReport).
+destruct (eq_nat_dec Print Print).
+specialize H with Bob.
+
+destruct (Peano_dec.eq_nat_dec Bob Alice). contradiction. 
+exact H. exact H. exact H.
+Qed.
+*)
+
+(* don't use the hypothesis. Add it directy to the Theorem statement *)
+
+Theorem BobUnregulated: 
+  not (trans_prin Bob (get_Prin_From_Agreement AgreeA2)) -> Unregulated Bob Print TheReport.
+Proof.
+intros BobNotInPrin.
+simpl in H.
+simpl in BobNotInPrin.
+
+specialize H with Bob TheReport Print.
+
+
+destruct (eq_nat_dec TheReport TheReport).
+destruct (eq_nat_dec Print Print).
+specialize H with Bob.
+
+destruct (Peano_dec.eq_nat_dec Bob Alice). contradiction. 
+exact H. exact H. exact H.
+Qed.
 
 End A2.
 
@@ -1310,6 +1345,29 @@ Hypothesis H: trans_agreement eA5 AgreeA5.
 
 Theorem T1_A5: forall x, x<>Bob -> ~Permitted x Print LoveAndPeace.
 Proof. simpl in H. 
+
+
+
+intros s BobNotInPrin.
+
+specialize H with s LoveAndPeace Print.
+
+
+destruct (eq_nat_dec LoveAndPeace LoveAndPeace).
+destruct (eq_nat_dec Print Print).
+specialize H with s.
+
+destruct (Peano_dec.eq_nat_dec s Bob). contradiction. 
+exact H. 
+
+assert (Print=Print). auto. contradiction.
+assert (LoveAndPeace=LoveAndPeace). auto. contradiction.
+
+
+Qed.
+
+
+
 destruct H as [H1 H2].
 
 intros s H'.
