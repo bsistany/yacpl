@@ -1090,18 +1090,18 @@ then (* asset_from_query = a *)
   if (act_in_policySet_dec action_from_query ps)
   then (* act_in *)
     
-  match ps with
-  | PPS pps => process_single_ps pps
-(*
-  | APS aps => 
+    match ps with
+      | PPS pps => process_single_ps pps
+    (*
+      | APS aps => 
         match aps with 
           | AndPolicySet ppolicysets => 
                trans_ps_list ppolicysets prin_u a
         end
-*)
-  end
-else (* ~ act_in *)
-    (Unregulated subject_from_query action_from_query a)
+    *)
+    end
+  else (* ~ act_in *)
+    (Unregulated subject_from_query action_from_query asset_from_query)
 else (* asset_from_query <> a *)
   (Unregulated subject_from_query action_from_query asset_from_query).
   
@@ -2625,10 +2625,7 @@ destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
 
 intros H'.
 destruct ps as [prim_policySet]. simpl.
-(*
-destruct prim_policySet as [proof_of_primInclusivePolicySet | proof_of_primExclusivePolicySet]. 
-destruct proof_of_primInclusivePolicySet as [prq_from_ps pol]. simpl.
-*)
+
 intros H. simpl in H.
 intros ac.
 
@@ -2678,20 +2675,28 @@ Theorem queryWithNonReleveantActionIsUnregulated:
    ((trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq)) -> 
           (Unregulated (get_Sq_Subject sq) ac (get_Sq_Asset sq))).
 Proof.
-
-intros sq ac.
-
-destruct sq as [agr subjet_from_query action_from_query asset_from_query e]. simpl.
-
-destruct agr as [pr asset_from_agreement ps]. simpl.
+destruct sq as 
+  [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
+intros ac.
+destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
 
 
-induction ps.
+intros H'.
+destruct ps as [prim_policySet]. simpl.
 
-intros H H'; simpl in H'; destruct H' as [H1 H2];
-unfold is_act_in_policySet in H;
-specialize H1 with asset_from_query ac subjet_from_query;
-refine (H1 _); right; exact H.
+intros H. 
+
+
+specialize H with subject_from_query asset_from_query ac.
+simpl in H'.
+
+
+destruct (eq_nat_dec asset_from_query asset_from_agreement).
+destruct (act_in_primPolicySet_dec ac prim_policySet).
+contradiction.
+
+exact H. exact H.
+ 
 (*
 intros H H'; simpl in H'; destruct H' as [H1 H2];
 unfold is_act_in_policySet in H;
