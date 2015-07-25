@@ -2618,17 +2618,27 @@ Theorem queryWithNonReleveantAssetIsUnregulated:
                            forall (ac:act),
                              (Unregulated (get_Sq_Subject sq) ac (get_Sq_Asset sq)).
 Proof.
-destruct sq as [agr sub ac asset_from_query e]. simpl.
+destruct sq as 
+  [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
+destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
 
-destruct agr as [pr asset_from_agreement ps]. simpl.
 
-intros H H'. 
+intros H'.
+destruct ps as [prim_policySet]. simpl.
+(*
+destruct prim_policySet as [proof_of_primInclusivePolicySet | proof_of_primExclusivePolicySet]. 
+destruct proof_of_primInclusivePolicySet as [prq_from_ps pol]. simpl.
+*)
+intros H. simpl in H.
+intros ac.
 
-intro ac0. induction ps in H'. 
+specialize H with subject_from_query asset_from_query ac.
 
-simpl in H'; destruct H' as [H1 H2];
-specialize H1 with asset_from_query ac0 sub;
-refine (H1 _); left; exact H.
+
+destruct (eq_nat_dec asset_from_query asset_from_agreement).
+contradiction.
+
+exact H. 
 
 (*
 simpl in H'; destruct H' as [H1 H2];
