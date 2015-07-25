@@ -1367,22 +1367,26 @@ assert (LoveAndPeace=LoveAndPeace). auto. contradiction.
 Qed.
 
 
-
-destruct H as [H1 H2].
-
-intros s H'.
-specialize H2 with s. 
-destruct (Peano_dec.eq_nat_dec s Bob).
-contradiction.
-assumption.
-Qed.
-
 Theorem T2_A5: ~Permitted Alice Print LoveAndPeace.
 Proof. simpl in H. 
 
-destruct H as [H1 H2].
-specialize H2 with Alice. simpl in H2.
-exact H2. Qed.
+specialize H with Alice LoveAndPeace Print.
+destruct (eq_nat_dec LoveAndPeace LoveAndPeace).
+destruct (eq_nat_dec Print Print).
+specialize H with Alice.
+
+destruct (Peano_dec.eq_nat_dec Alice Bob). 
+destruct (trans_preRequisite_dec eA5 Alice TruePrq [id3] prin_bob).
+
+assert (Alice <> Bob). intuition. inversion H0. contradiction.
+assert (trans_preRequisite eA5 Alice TruePrq [id3] prin_bob).
+simpl. auto. contradiction.
+exact H. 
+
+assert (Print=Print). auto. contradiction.
+assert (LoveAndPeace=LoveAndPeace). auto. contradiction.
+
+Qed.
 
 End A5.
 
