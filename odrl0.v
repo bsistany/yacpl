@@ -2788,6 +2788,196 @@ destruct pp' as [prq' pid actionFromPrimPolicy].
 simpl; left; unfold makeResult; auto.
 Defined.
 
+Theorem trans_policy_PIPS_dec:
+  forall
+  (e:environment)(prq: preRequisite)(p:policy)(subject_from_query:subject)
+  (prin_u:prin)(a:asset)(action_from_query:act),
+
+ (isResultInQueryResult 
+    (Result Permitted subject_from_query action_from_query a)
+    (trans_policy_PIPS e prq p subject_from_query prin_u a action_from_query)) 
+\/
+
+  (isResultInQueryResult 
+    (Result Unregulated subject_from_query action_from_query a)
+    (trans_policy_PIPS e prq p subject_from_query prin_u a action_from_query)).
+Proof.
+
+destruct p as [primPolicies]. 
+intros subject_from_query prin_u a action_from_query.
+induction primPolicies as [pp | pp' rest_pp].
+
+destruct pp as [prq' pid actionFromPrimPolicy].
+unfold trans_policy_PIPS.
+destruct (trans_prin_dec subject_from_query prin_u).
+destruct (trans_preRequisite_dec e subject_from_query prq
+        (getId (Policy [PrimitivePolicy prq' pid actionFromPrimPolicy]))
+        prin_u).
+apply trans_policy_positive_dec.
+right; apply trans_policy_unregulated_dec.
+right; apply trans_policy_unregulated_dec.
+
+
+destruct pp' as [prq' pid actionFromPrimPolicy].
+unfold trans_policy_PIPS.
+destruct (trans_prin_dec subject_from_query prin_u).
+destruct (trans_preRequisite_dec e subject_from_query prq
+        (getId
+           (Policy (PrimitivePolicy prq' pid actionFromPrimPolicy, rest_pp)))
+        prin_u).
+apply trans_policy_positive_dec.
+right; apply trans_policy_unregulated_dec.
+right; apply trans_policy_unregulated_dec.
+Defined.
+
+Theorem trans_policy_PEPS_dec:
+  forall
+  (e:environment)(prq: preRequisite)(p:policy)(subject_from_query:subject)
+  (prin_u:prin)(a:asset)(action_from_query:act),
+
+ (isResultInQueryResult 
+    (Result Permitted subject_from_query action_from_query a)
+    (trans_policy_PEPS e prq p subject_from_query prin_u a action_from_query)) 
+\/
+
+ (isResultInQueryResult 
+    (Result NotPermitted subject_from_query action_from_query a)
+    (trans_policy_PEPS e prq p subject_from_query prin_u a action_from_query))
+\/
+
+ (isResultInQueryResult 
+    (Result Unregulated subject_from_query action_from_query a)
+    (trans_policy_PEPS e prq p subject_from_query prin_u a action_from_query)).
+
+Proof.
+
+destruct p as [primPolicies]. 
+intros subject_from_query prin_u a action_from_query.
+induction primPolicies as [pp | pp' rest_pp].
+
+destruct pp as [prq' pid actionFromPrimPolicy].
+unfold trans_policy_PEPS.
+destruct (trans_prin_dec subject_from_query prin_u).
+destruct (trans_preRequisite_dec e subject_from_query prq
+        (getId (Policy [PrimitivePolicy prq' pid actionFromPrimPolicy]))
+        prin_u).
+simpl.
+destruct (trans_preRequisite_dec e subject_from_query prq' [pid] prin_u).
+destruct (eq_nat_dec action_from_query actionFromPrimPolicy).
+left; simpl; unfold makeResult; auto.
+
+right; right; simpl; unfold makeResult; auto.
+right; right; simpl; unfold makeResult; auto.
+right; right; simpl; unfold makeResult; auto.
+simpl.
+destruct (Peano_dec.eq_nat_dec action_from_query actionFromPrimPolicy).
+right; left; simpl; unfold makeResult; auto.
+right; right; simpl; unfold makeResult; auto.
+
+
+unfold trans_policy_PEPS.
+destruct (trans_prin_dec subject_from_query prin_u).
+destruct (trans_preRequisite_dec e subject_from_query prq
+        (getId (Policy (pp', rest_pp))) prin_u).
+destruct (trans_policy_positive_dec e subject_from_query (Policy (pp', rest_pp)) prin_u
+     a action_from_query).
+left. assumption.
+right. right. assumption.
+
+right; right. apply trans_policy_unregulated_dec.
+right. simpl. 
+destruct pp' as [prq' pid actionFromPrimPolicy].
+simpl. 
+destruct (Peano_dec.eq_nat_dec action_from_query actionFromPrimPolicy).
+simpl.
+left. left. unfold makeResult; auto.
+right. simpl. left. unfold makeResult; auto.
+Defined.
+
+Theorem or_commutes : forall (P Q R : Prop),
+  P \/ Q \/ R -> Q \/ P \/ R.
+Proof.
+intros P Q R. intros H. inversion H as [HP | HQR].
+right. left. assumption. destruct HQR as [HQ | HR]. left. assumption.
+right. right. assumption. Qed.
+
+
+
+Theorem trans_ps_dec:
+  forall
+  (e:environment)(action_from_query:act)(subject_from_query:subject)(asset_from_query:asset)
+  (ps:policySet)
+  (prin_u:prin)(a:asset),
+
+ (isResultInQueryResult 
+    (Result Permitted subject_from_query action_from_query asset_from_query)
+    (trans_ps e action_from_query subject_from_query asset_from_query ps prin_u a)) 
+\/
+
+ (isResultInQueryResult 
+    (Result NotPermitted subject_from_query action_from_query asset_from_query)
+    (trans_ps e action_from_query subject_from_query asset_from_query ps prin_u a)) 
+\/
+
+ (isResultInQueryResult 
+    (Result Unregulated subject_from_query action_from_query asset_from_query)
+    (trans_ps e action_from_query subject_from_query asset_from_query ps prin_u a)).
+
+Proof.
+destruct ps as [pps]. 
+intros prin_u a.
+induction pps as [pips | peps].
+
+simpl. 
+destruct (eq_nat_dec asset_from_query a).
+destruct pips as [prq p].
+apply or_commutes.
+right. subst. apply trans_policy_PIPS_dec.
+right. right. simpl. unfold makeResult; auto.
+
+
+simpl. 
+destruct (eq_nat_dec asset_from_query a).
+destruct peps as [prq p].
+subst. apply trans_policy_PEPS_dec.
+right. right. simpl. unfold makeResult; auto.
+Defined.
+
+
+Theorem trans_agreement_dec:
+  forall
+  (e:environment)(ag:agreement)(action_from_query:act)
+   (subject_from_query:subject)(asset_from_query:asset),
+
+
+ (isResultInQueryResult 
+    (Result Permitted subject_from_query action_from_query asset_from_query)
+    (trans_agreement e ag action_from_query subject_from_query asset_from_query)) 
+\/
+
+ (isResultInQueryResult 
+    (Result NotPermitted subject_from_query action_from_query asset_from_query)
+    (trans_agreement e ag action_from_query subject_from_query asset_from_query))
+\/
+
+ (isResultInQueryResult 
+    (Result Unregulated subject_from_query action_from_query asset_from_query)
+    (trans_agreement e ag action_from_query subject_from_query asset_from_query)).
+
+Proof.
+
+ 
+intros e ag action_from_query subject_from_query asset_from_query. 
+unfold trans_agreement.
+
+
+destruct ag as [prin_u asset_from_agreement ps].
+apply trans_ps_dec.
+Defined.
+
+
+
+
 Theorem blah_dec:
   forall (sq:single_query),
 
