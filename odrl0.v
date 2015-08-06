@@ -3054,6 +3054,76 @@ intros contra. inversion contra. contradiction.
 
 Defined.
 
+Theorem trans_policy_negative_dec_not:
+  forall 
+(e:environment)(s:subject)(p:policy)(a:asset)
+  (action_from_query: act),
+ 
+  ~(isResultInQueryResult 
+    (Result Permitted s action_from_query a)
+    (trans_policy_negative e s p a action_from_query)).
+Proof.
+
+destruct p as [primPolicies]. 
+intros a action_from_query.
+induction primPolicies as [pp | pp' rest_pp].
+
+destruct pp as [prq' pid actionFromPrimPolicy].
+simpl.
+destruct (Peano_dec.eq_nat_dec action_from_query actionFromPrimPolicy).
+simpl. unfold makeResult. apply AnswersNotEqual. intros contra. inversion contra.
+simpl. unfold makeResult. apply AnswersNotEqual. intros contra. inversion contra.
+
+destruct pp' as [prq' pid actionFromPrimPolicy]. simpl.
+destruct (Peano_dec.eq_nat_dec action_from_query actionFromPrimPolicy).
+
+simpl. intros contra. unfold makeResult in contra. destruct contra as [H1 | H2]. 
+apply AnswersNotEqual in H1. auto.
+intros contra. inversion contra. simpl in IHrest_pp. contradiction.
+
+simpl. intros contra. unfold makeResult in contra. destruct contra as [H1 | H2]. 
+apply AnswersNotEqual in H1. auto.
+intros contra. inversion contra. simpl in IHrest_pp. contradiction.
+
+Defined.
+
+Theorem trans_policy_unregulated_dec_not:
+  forall 
+(e:environment)(s:subject)(p:policy)(a:asset)
+  (action_from_query: act),
+ 
+  ~(isResultInQueryResult 
+    (Result Permitted s action_from_query a)
+    (trans_policy_unregulated e s p a action_from_query)) /\
+  
+  ~(isResultInQueryResult 
+    (Result NotPermitted s action_from_query a)
+    (trans_policy_unregulated e s p a action_from_query)).
+Proof.
+
+destruct p as [primPolicies]. 
+intros a action_from_query.
+induction primPolicies as [pp | pp' rest_pp].
+
+destruct pp as [prq' pid actionFromPrimPolicy].
+simpl. unfold makeResult. split.
+apply AnswersNotEqual. intros contra. inversion contra.
+apply AnswersNotEqual. intros contra. inversion contra.
+simpl.
+destruct pp' as [prq' pid actionFromPrimPolicy]. 
+simpl in IHrest_pp. 
+simpl. split.
+
+intros contra. unfold makeResult in contra. destruct contra as [H1 | H2]. 
+apply AnswersNotEqual in H1. auto.
+intros contra. inversion contra. destruct IHrest_pp as [H H']. contradiction.
+
+intros contra. unfold makeResult in contra. destruct contra as [H1 | H2]. 
+apply AnswersNotEqual in H1. auto.
+intros contra. inversion contra. destruct IHrest_pp as [H H']. contradiction.
+Defined.
+
+
 
 Theorem trans_policy_PIPS_dec_not:
   forall
@@ -3069,6 +3139,37 @@ intros subject_from_query prin_u a action_from_query.
 induction primPolicies as [pp | pp' rest_pp].
 
 destruct pp as [prq' pid actionFromPrimPolicy].
+unfold trans_policy_PIPS.
+destruct (trans_prin_dec subject_from_query prin_u).
+destruct (trans_preRequisite_dec e subject_from_query prq
+        (getId (Policy [PrimitivePolicy prq' pid actionFromPrimPolicy]))
+        prin_u).
+simpl.
+destruct (trans_preRequisite_dec e subject_from_query prq' [pid] prin_u).
+destruct (eq_nat_dec action_from_query actionFromPrimPolicy).
+simpl. unfold makeResult. apply AnswersNotEqual. intros contra. inversion contra.
+simpl. unfold makeResult. apply AnswersNotEqual. intros contra. inversion contra.
+simpl. unfold makeResult. apply AnswersNotEqual. intros contra. inversion contra.
+simpl. unfold makeResult. apply AnswersNotEqual. intros contra. inversion contra.
+simpl. unfold makeResult. apply AnswersNotEqual. intros contra. inversion contra.
+
+unfold trans_policy_PIPS.
+destruct (trans_prin_dec subject_from_query prin_u).
+destruct (trans_preRequisite_dec e subject_from_query prq
+        (getId (Policy (pp', rest_pp))) prin_u).
+apply trans_policy_positive_dec_not.
+apply trans_policy_unregulated_dec_not.
+apply trans_policy_unregulated_dec_not.
+
+Defined.
+
+
+
+
+
+
+
+
 unfold trans_policy_PIPS.
 destruct (trans_prin_dec subject_from_query prin_u).
 destruct (trans_preRequisite_dec e subject_from_query prq
