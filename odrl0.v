@@ -3166,66 +3166,6 @@ Defined.
 
 
 
-
-
-
-
-unfold trans_policy_PIPS.
-destruct (trans_prin_dec subject_from_query prin_u).
-destruct (trans_preRequisite_dec e subject_from_query prq
-        (getId (Policy [PrimitivePolicy prq' pid actionFromPrimPolicy]))
-        prin_u).
-intros constra.
-apply trans_policy_positive_dec.
-right; apply trans_policy_unregulated_dec.
-right; apply trans_policy_unregulated_dec.
-
-
-destruct pp' as [prq' pid actionFromPrimPolicy].
-unfold trans_policy_PIPS.
-destruct (trans_prin_dec subject_from_query prin_u).
-destruct (trans_preRequisite_dec e subject_from_query prq
-        (getId
-           (Policy (PrimitivePolicy prq' pid actionFromPrimPolicy, rest_pp)))
-        prin_u).
-apply trans_policy_positive_dec.
-right; apply trans_policy_unregulated_dec.
-right; apply trans_policy_unregulated_dec.
-Defined.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-intros e prq p subject_from_query prin_u a action_from_query.
-destruct (trans_policy_PIPS_dec e prq p subject_from_query prin_u a action_from_query).
-destruct p as [primPolicies]. 
-
-
-induction primPolicies as [pp | pp' rest_pp].
-
-
-destruct pp as [prq' pid actionFromPrimPolicy].
-unfold isResultInQueryResult.
-intros H.
-pose (bbb:= apply AnswersNotEqual with (ans1:=NotPermitted) (ans2:=Permitted)).
-unfold In.
-unfold trans_policy_PIPS.
-
-
-
-
-
-
 Theorem blah_dec:
   forall (sq:single_query),
 
