@@ -3163,6 +3163,25 @@ apply trans_policy_unregulated_dec_not.
 
 Defined.
 
+Theorem trans_policy_PIPS_perm_implies_not_notPerm_dec:
+  forall
+  (e:environment)(prq: preRequisite)(p:policy)(subject_from_query:subject)
+  (prin_u:prin)(a:asset)(action_from_query:act),
+
+(isResultInQueryResult 
+    (Result Permitted subject_from_query action_from_query a)
+    (trans_policy_PIPS e prq p subject_from_query prin_u a action_from_query)) ->
+
+
+ ~(isResultInQueryResult 
+    (Result NotPermitted subject_from_query action_from_query a)
+    (trans_policy_PIPS e prq p subject_from_query prin_u a action_from_query)).
+Proof.
+intros e prq p subject_from_query prin_u a action_from_query.
+intros H.
+apply trans_policy_PIPS_dec_not.
+Defined.
+
 
 
 
