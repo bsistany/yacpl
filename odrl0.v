@@ -3183,6 +3183,55 @@ apply trans_policy_PIPS_dec_not.
 Defined.
 
 
+Theorem trans_policy_PEPS_perm_implies_not_notPerm_dec:
+  forall
+  (e:environment)(prq: preRequisite)(p:policy)(subject_from_query:subject)
+  (prin_u:prin)(a:asset)(action_from_query:act),
+
+    (isResultInQueryResult 
+      (Result Permitted subject_from_query action_from_query a)
+        (trans_policy_PEPS e prq p subject_from_query prin_u a action_from_query)) ->
+
+   ~(isResultInQueryResult 
+      (Result NotPermitted subject_from_query action_from_query a)
+       (trans_policy_PEPS e prq p subject_from_query prin_u a action_from_query)).
+Proof.
+
+intros e prq p subject_from_query prin_u a action_from_query.
+
+unfold trans_policy_PEPS.
+destruct (trans_prin_dec subject_from_query prin_u).
+destruct (trans_preRequisite_dec e subject_from_query prq (getId p) prin_u).
+intros H.
+(*
+specialize trans_policy_positive_dec with e subject_from_query p prin_u a action_from_query.
+intros H'.
+*)
+apply trans_policy_positive_dec_not.
+intros H.
+specialize trans_policy_unregulated_dec_not with e subject_from_query p a action_from_query.
+intros H'. destruct H' as [H1 H2]. exact H2.
+intros H.
+specialize trans_policy_negative_dec_not with 
+  e subject_from_query p a action_from_query.
+intros H'. contradiction.
+
+Defined.
+
+
+
+
+
+
+
+
+
+
+
+intros e prq p subject_from_query prin_u a action_from_query.
+intros H.
+apply trans_policy_PEPS_dec_not.
+Defined.
 
 
 Theorem blah_dec:
