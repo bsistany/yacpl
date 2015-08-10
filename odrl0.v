@@ -3203,10 +3203,6 @@ unfold trans_policy_PEPS.
 destruct (trans_prin_dec subject_from_query prin_u).
 destruct (trans_preRequisite_dec e subject_from_query prq (getId p) prin_u).
 intros H.
-(*
-specialize trans_policy_positive_dec with e subject_from_query p prin_u a action_from_query.
-intros H'.
-*)
 apply trans_policy_positive_dec_not.
 intros H.
 specialize trans_policy_unregulated_dec_not with e subject_from_query p a action_from_query.
@@ -3220,18 +3216,37 @@ Defined.
 
 
 
+Theorem trans_ps_perm_implies_not_notPerm_dec:
+  forall
+  (e:environment)(action_from_query:act)(subject_from_query:subject)
+  (asset_from_query:asset)(ps:policySet)(prin_u:prin)(a:asset),
 
 
+    (isResultInQueryResult 
+      (Result Permitted subject_from_query action_from_query asset_from_query)
+        (trans_ps e action_from_query subject_from_query asset_from_query ps prin_u a)) ->
 
+   ~(isResultInQueryResult 
+      (Result NotPermitted subject_from_query action_from_query asset_from_query)
+       (trans_ps e action_from_query subject_from_query asset_from_query ps prin_u a)).
+Proof.
+destruct ps as [prim_policySet]. simpl.
+intros prin_u a.
+destruct prim_policySet as [proof_of_primInclusivePolicySet | proof_of_primExclusivePolicySet].  
 
+destruct proof_of_primInclusivePolicySet as [prq_from_ps pol]. 
+destruct (eq_nat_dec asset_from_query a).
+subst. apply trans_policy_PIPS_perm_implies_not_notPerm_dec. simpl.
+unfold makeResult. intros H. intros contra. apply AnswersNotEqual in contra. auto.
+intros contra'. inversion contra'.
 
-
-
-
-intros e prq p subject_from_query prin_u a action_from_query.
-intros H.
-apply trans_policy_PEPS_dec_not.
+destruct proof_of_primExclusivePolicySet as [prq_from_ps pol]. 
+destruct (eq_nat_dec asset_from_query a).
+subst. apply trans_policy_PEPS_perm_implies_not_notPerm_dec. simpl.
+unfold makeResult. intros H. intros contra. apply AnswersNotEqual in contra. auto.
+intros contra'. inversion contra'.
 Defined.
+
 
 
 Theorem blah_dec:
