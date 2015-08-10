@@ -3397,6 +3397,74 @@ set (asset_from_agreement := (get_Asset_From_Agreement agr)).
 set (prin_u := (get_Prin_From_Agreement agr)).
 ****)
 
+Theorem trans_agreement_not_NotPerm_and_not_Perm_implies_Unregulated_dec:
+  forall
+    (e:environment)(ag:agreement)(action_from_query:act)
+    (subject_from_query:subject)(asset_from_query:asset),
+
+    (~(isResultInQueryResult 
+      (Result Permitted subject_from_query action_from_query asset_from_query)
+        (trans_agreement e ag action_from_query subject_from_query asset_from_query)) /\
+
+    ~(isResultInQueryResult 
+      (Result NotPermitted subject_from_query action_from_query asset_from_query)
+        (trans_agreement e ag action_from_query subject_from_query asset_from_query))) ->
+
+   (isResultInQueryResult 
+      (Result Unregulated subject_from_query action_from_query asset_from_query)
+       (trans_agreement e ag action_from_query subject_from_query asset_from_query)).
+Proof.
+destruct ag as [prin_from_agreement asset_from_agreement ps]. simpl.
+intros action_from_query subject_from_query asset_from_query.
+destruct ps as [prim_policySet]. simpl.
+destruct (eq_nat_dec asset_from_query asset_from_agreement).
+destruct prim_policySet as [proof_of_primInclusivePolicySet | proof_of_primExclusivePolicySet]. 
+
+destruct proof_of_primInclusivePolicySet as [prq_from_ps pol]. 
+intros H. destruct H as [H1 H2].
+specialize trans_policy_PIPS_dec with 
+  e prq_from_ps pol subject_from_query prin_from_agreement asset_from_query action_from_query.
+intros HA. destruct HA as [HA1 | HA2]. 
+  subst. contradiction. 
+  subst. assumption.
+
+destruct proof_of_primExclusivePolicySet as [prq_from_ps pol]. 
+intros H. destruct H as [H1 H2].
+specialize trans_policy_PEPS_dec with 
+  e prq_from_ps pol subject_from_query prin_from_agreement asset_from_query action_from_query.
+intros HA. destruct HA as [HA1 | HA2]. 
+  subst. contradiction. 
+  subst. destruct HA2 as [HA21 | HA22]. 
+    contradiction. 
+    assumption.
+intros H. simpl. unfold makeResult. auto.
+Defined. 
+
+
+apply trans_ps_NotPerm_implies_not_Perm_dec.
+Defined.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 End ZZZ.
 
 
