@@ -3269,6 +3269,128 @@ Defined.
 
 End Perm_implies_not_notPerm.
 
+Section NotPerm_implies_not_Perm.
+
+Theorem trans_policy_PIPS_NotPerm_implies_not_Perm_dec:
+  forall
+  (e:environment)(prq: preRequisite)(p:policy)(subject_from_query:subject)
+  (prin_u:prin)(a:asset)(action_from_query:act),
+
+(isResultInQueryResult 
+   (Result NotPermitted subject_from_query action_from_query a)
+    (trans_policy_PIPS e prq p subject_from_query prin_u a action_from_query)) ->
+
+
+ ~(isResultInQueryResult 
+    (Result Permitted subject_from_query action_from_query a)
+    (trans_policy_PIPS e prq p subject_from_query prin_u a action_from_query)).
+Proof.
+intros e prq p subject_from_query prin_u a action_from_query.
+unfold trans_policy_PIPS.
+destruct (trans_prin_dec subject_from_query prin_u).
+destruct (trans_preRequisite_dec e subject_from_query prq (getId p) prin_u).
+intros H'.
+specialize trans_policy_positive_dec_not with e subject_from_query p prin_u a action_from_query.
+intros H. contradiction.
+
+intros H'.
+specialize trans_policy_unregulated_dec_not with e subject_from_query p a action_from_query.
+intros H. destruct H as [H1 H2]. contradiction.
+
+intros H'.
+specialize trans_policy_unregulated_dec_not with e subject_from_query p a action_from_query.
+intros H. destruct H as [H1 H2]. contradiction.
+Defined.
+
+
+Theorem trans_policy_PEPS_NotPerm_implies_not_Perm_dec:
+  forall
+  (e:environment)(prq: preRequisite)(p:policy)(subject_from_query:subject)
+  (prin_u:prin)(a:asset)(action_from_query:act),
+
+    (isResultInQueryResult 
+      (Result NotPermitted subject_from_query action_from_query a)
+        (trans_policy_PEPS e prq p subject_from_query prin_u a action_from_query)) ->
+
+   ~(isResultInQueryResult 
+      (Result Permitted subject_from_query action_from_query a)
+       (trans_policy_PEPS e prq p subject_from_query prin_u a action_from_query)).
+Proof.
+
+intros e prq p subject_from_query prin_u a action_from_query.
+
+unfold trans_policy_PEPS.
+destruct (trans_prin_dec subject_from_query prin_u).
+destruct (trans_preRequisite_dec e subject_from_query prq (getId p) prin_u).
+
+intros H'.
+specialize trans_policy_positive_dec_not with e subject_from_query p prin_u a action_from_query.
+intros H. contradiction.
+
+intros H'.
+specialize trans_policy_unregulated_dec_not with e subject_from_query p a action_from_query.
+intros H. destruct H as [H1 H2]. contradiction.
+
+intros H'.
+apply trans_policy_negative_dec_not.
+Defined.
+
+Theorem trans_ps_NotPerm_implies_not_Perm_dec:
+  forall
+  (e:environment)(action_from_query:act)(subject_from_query:subject)
+  (asset_from_query:asset)(ps:policySet)(prin_u:prin)(a:asset),
+
+
+    (isResultInQueryResult 
+      (Result NotPermitted subject_from_query action_from_query asset_from_query)
+        (trans_ps e action_from_query subject_from_query asset_from_query ps prin_u a)) ->
+
+   ~(isResultInQueryResult 
+      (Result Permitted subject_from_query action_from_query asset_from_query)
+       (trans_ps e action_from_query subject_from_query asset_from_query ps prin_u a)).
+Proof.
+destruct ps as [prim_policySet]. simpl.
+intros prin_u a.
+destruct prim_policySet as [proof_of_primInclusivePolicySet | proof_of_primExclusivePolicySet].  
+
+destruct proof_of_primInclusivePolicySet as [prq_from_ps pol]. 
+destruct (eq_nat_dec asset_from_query a).
+
+intros H'.
+specialize trans_policy_PIPS_dec_not with e prq_from_ps pol subject_from_query
+     prin_u a action_from_query.
+intros H. subst. contradiction.
+
+simpl. unfold makeResult. intros contra. apply AnswersNotEqual. intros contra'. 
+inversion contra'. 
+
+destruct proof_of_primExclusivePolicySet as [prq_from_ps pol]. 
+destruct (eq_nat_dec asset_from_query a).
+subst. apply trans_policy_PEPS_NotPerm_implies_not_Perm_dec.
+
+simpl. unfold makeResult. intros contra. apply AnswersNotEqual. intros contra'. 
+inversion contra'. 
+Defined.
+
+Theorem trans_agreement_NotPerm_implies_not_Perm_dec:
+  forall
+    (e:environment)(ag:agreement)(action_from_query:act)
+    (subject_from_query:subject)(asset_from_query:asset),
+
+    (isResultInQueryResult 
+      (Result NotPermitted subject_from_query action_from_query asset_from_query)
+        (trans_agreement e ag action_from_query subject_from_query asset_from_query)) ->
+
+   ~(isResultInQueryResult 
+      (Result Permitted subject_from_query action_from_query asset_from_query)
+       (trans_agreement e ag action_from_query subject_from_query asset_from_query)).
+Proof.
+destruct ag as [prin_from_agreement asset_from_agreement ps]. simpl.
+intros action_from_query subject_from_query asset_from_query.
+apply trans_ps_NotPerm_implies_not_Perm_dec.
+Defined.
+
+End NotPerm_implies_not_Perm.
 
 Theorem blah_dec:
   forall (sq:single_query),
