@@ -3163,6 +3163,8 @@ apply trans_policy_unregulated_dec_not.
 
 Defined.
 
+Section Perm_implies_not_notPerm.
+
 Theorem trans_policy_PIPS_perm_implies_not_notPerm_dec:
   forall
   (e:environment)(prq: preRequisite)(p:policy)(subject_from_query:subject)
@@ -3247,6 +3249,25 @@ unfold makeResult. intros H. intros contra. apply AnswersNotEqual in contra. aut
 intros contra'. inversion contra'.
 Defined.
 
+Theorem trans_agreement_perm_implies_not_notPerm_dec:
+  forall
+    (e:environment)(ag:agreement)(action_from_query:act)
+    (subject_from_query:subject)(asset_from_query:asset),
+
+    (isResultInQueryResult 
+      (Result Permitted subject_from_query action_from_query asset_from_query)
+        (trans_agreement e ag action_from_query subject_from_query asset_from_query)) ->
+
+   ~(isResultInQueryResult 
+      (Result NotPermitted subject_from_query action_from_query asset_from_query)
+       (trans_agreement e ag action_from_query subject_from_query asset_from_query)).
+Proof.
+destruct ag as [prin_from_agreement asset_from_agreement ps]. simpl.
+intros action_from_query subject_from_query asset_from_query.
+apply trans_ps_perm_implies_not_notPerm_dec.
+Defined.
+
+End Perm_implies_not_notPerm.
 
 
 Theorem blah_dec:
