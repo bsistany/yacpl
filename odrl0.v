@@ -3440,8 +3440,186 @@ intros HA. destruct HA as [HA1 | HA2].
 intros H. simpl. unfold makeResult. auto.
 Defined. 
 
+Theorem trans_agreement_not_Perm_and_NotPerm_at_once:
+  forall
+  (e:environment)(ag:agreement)(action_from_query:act)
+   (subject_from_query:subject)(asset_from_query:asset),
 
-apply trans_ps_NotPerm_implies_not_Perm_dec.
+
+ ~((isResultInQueryResult 
+    (Result Permitted subject_from_query action_from_query asset_from_query)
+    (trans_agreement e ag action_from_query subject_from_query asset_from_query)) 
+/\
+
+ (isResultInQueryResult 
+    (Result NotPermitted subject_from_query action_from_query asset_from_query)
+    (trans_agreement e ag action_from_query subject_from_query asset_from_query))).
+Proof.
+destruct ag as [prin_from_agreement asset_from_agreement ps]. simpl.
+destruct ps as [prim_policySet]. simpl.
+destruct prim_policySet as [proof_of_primInclusivePolicySet | proof_of_primExclusivePolicySet]. simpl. 
+
+destruct proof_of_primInclusivePolicySet as [prq_from_ps pol]. simpl.
+intros action_from_query subject_from_query asset_from_query.
+destruct (eq_nat_dec asset_from_query asset_from_agreement).
+intros H. destruct H as [H1 H2].
+specialize trans_policy_PIPS_dec_not with e prq_from_ps pol subject_from_query
+     prin_from_agreement asset_from_query action_from_query.
+intros H'. subst. contradiction.
+simpl.
+intros H. destruct H as [H1 H2]. apply AnswersNotEqual in H1. auto.
+intros contra. inversion contra.
+
+destruct proof_of_primExclusivePolicySet as [prq_from_ps pol]. simpl.
+intros action_from_query subject_from_query asset_from_query.
+destruct (eq_nat_dec asset_from_query asset_from_agreement).
+intros H. destruct H as [H1 H2].
+specialize trans_policy_PEPS_perm_implies_not_notPerm_dec with e prq_from_ps pol 
+     subject_from_query prin_from_agreement asset_from_query action_from_query.
+intros H. subst. apply H in H1. contradiction.
+
+simpl.
+unfold makeResult. intros H. destruct H as [H1 H2].
+apply AnswersNotEqual in H1. auto.
+intros contra'. inversion contra'.
+Defined.
+
+End ZZZ.
+
+Section primPolicyFromPS.
+Fixpoint is_primPolicy_in_primPolicies (thePrimPolicy:primPolicy)(l:nonemptylist primPolicy){struct l}  : Prop :=
+  
+  match l with
+    | Single pp => thePrimPolicy = pp
+    | NewList pp' rest_pp' => (thePrimPolicy = pp') \/
+                              (is_primPolicy_in_primPolicies thePrimPolicy rest_pp')
+  end.
+  
+Definition is_primPolicy_in_policy (thePrimPolicy:primPolicy)(p:policy): Prop :=
+
+  match p with     
+    | Policy ppolicies => is_primPolicy_in_primPolicies thePrimPolicy ppolicies
+  end.
+
+Definition is_primPolicy_in_prim_policySet (thePrimPolicy:primPolicy)(pps:primPolicySet) : Prop :=
+  match pps with 
+    | PIPS pips => 
+        match pips with | PrimitiveInclusivePolicySet _ pol => 
+          is_primPolicy_in_policy thePrimPolicy pol
+        end
+    | PEPS peps => 
+        match peps with | PrimitiveExclusivePolicySet _ pol => 
+          is_primPolicy_in_policy thePrimPolicy pol
+        end
+  end.
+
+  
+Definition is_primPolicy_in_policySet (thePrimPolicy:primPolicy)(ps:policySet): Prop :=
+
+  match ps with
+    | PPS pps => is_primPolicy_in_prim_policySet thePrimPolicy pps       
+  end.
+
+Definition get_ID_From_primPolicy (pp:primPolicy): policyId :=
+   match pp with 
+    | PrimitivePolicy prq pid action => pid
+  end.
+
+Definition get_Action_From_primPolicy (pp:primPolicy): act :=
+   match pp with 
+    | PrimitivePolicy prq pid action => action 
+  end.
+Theorem eq_preRquisite_dec :
+  forall (x y:preRquisite), {x = y} + {x <> y}.
+Proof.
+   repeat decide equality.
+
+Theorem eq_primPolicy_dec :
+  forall (x y:primPolicy), {x = y} + {x <> y}.
+Proof.
+   repeat decide equality.
+Theorem primPolicy_in_policySet_dec :
+  (forall (x y:primPolicy), {x = y} + {x <> y}) -> 
+    forall (thePrimPolicy:primPolicy)(ps:policySet), 
+      {is_primPolicy_in_policySet thePrimPolicy ps} + {~ is_primPolicy_in_policySet thePrimPolicy ps}.
+Proof.
+intros H.
+induction ps as [prim_policySet].
+destruct prim_policySet as [proof_of_primInclusivePolicySet | proof_of_primExclusivePolicySet]. 
+
+destruct proof_of_primInclusivePolicySet as [prq_from_ps pol]. simpl.
+induction pol as [ppolicies].
+induction ppolicies as [| pp ppolicies' IHppolicies].
+apply H.
+
+
+destruct (H pp thePrimPolicy). simpl. auto.
+destruct IHppolicies. simpl. auto.
+right. unfold not. intros [Hc1| Hc2]; auto.
+
+destruct proof_of_primExclusivePolicySet as [prq_from_ps pol]. simpl.
+induction pol as [ppolicies].
+induction ppolicies as [| pp ppolicies' IHppolicies].
+apply H.
+
+
+destruct (H pp thePrimPolicy). simpl. auto.
+destruct IHppolicies. simpl. auto.
+right. unfold not. intros [Hc1| Hc2]; auto.
+
+Defined.
+
+Eval compute in (if (primPolicy_in_policySet_dec eq_nat_dec 10 (cons 3 (cons 4 (cons 5 nil)))) then 1 else 2).
+
+End primPolicyFromPS.
+
+Theorem BBBBB: 
+  forall (sq:single_query)(pp:primPolicy),
+    (is_primPolicy_in_policySet pp (get_PS_From_Agreement (get_Sq_Agreement sq))) ->
+
+    if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+          (get_preRequisite_From_primPolicy pp)
+          (Single (get_ID_From_primPolicy pp))
+          (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+    then (* prin /\ prq /\ prq' *)
+      if (eq_nat_dec (get_Sq_Action sq) (get_Action_From_primPolicy pp))
+      then
+        (isResultInQueryResult 
+          (Result Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+          (trans_policy_positive (get_Sq_Env sq) (get_Sq_Subject sq) 
+             (Policy (Single pp))
+             (get_Prin_From_Agreement (get_Sq_Agreement sq)) (get_Sq_Asset sq)
+             (get_Sq_Action sq)))
+      else
+        (isResultInQueryResult 
+          (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+          (trans_policy_positive (get_Sq_Env sq) (get_Sq_Subject sq) 
+           (Policy (Single pp))
+           (get_Prin_From_Agreement (get_Sq_Agreement sq)) (get_Sq_Asset sq)
+           (get_Sq_Action sq)))
+    else (* prin /\ prq /\ ~prq' *)
+      (isResultInQueryResult 
+        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+        (trans_policy_positive (get_Sq_Env sq) (get_Sq_Subject sq) 
+           (Policy (Single pp))
+           (get_Prin_From_Agreement (get_Sq_Agreement sq)) (get_Sq_Asset sq)
+           (get_Sq_Action sq))).
+Proof.
+
+destruct sq as [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
+
+destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
+intros pp H. simpl.
+destruct pp as [prq' pid action_from_policy]. simpl.
+destruct (eq_nat_dec action_from_query action_from_policy).
+destruct (trans_preRequisite_dec env_from_query subject_from_query prq'
+     [pid] prin_from_agreement). 
+simpl. unfold makeResult. auto.
+simpl. unfold makeResult. auto.
+destruct (trans_preRequisite_dec env_from_query subject_from_query prq' [pid]
+     prin_from_agreement).
+simpl. unfold makeResult. auto.
+simpl. unfold makeResult. auto.
 Defined.
 
 
@@ -3449,23 +3627,188 @@ Defined.
 
 
 
+Theorem CCCCC :
+    forall (sq:single_query)(pp:primPolicy),
+    (is_primPolicy_in_policySet pp (get_PS_From_Agreement (get_Sq_Agreement sq))) ->
+
+  if (eq_nat_dec (get_Sq_Asset sq) (get_Asset_From_Agreement (get_Sq_Agreement sq)))
+  then
+    if (trans_prin_dec (get_Sq_Subject sq) (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+    then (* prin *)
+      if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq) 
+            (get_preRequisite_From_policySet 
+               (get_PS_From_Agreement (get_Sq_Agreement sq))) 
+            (getId (Policy (Single pp))) 
+            (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+      then (* prin /\ prq *)
+        if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+          (get_preRequisite_From_primPolicy pp)
+          (Single (get_ID_From_primPolicy pp))
+          (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+        then (* prin /\ prq /\ prq' *)
+          if (eq_nat_dec (get_Sq_Action sq) (get_Action_From_primPolicy pp))
+          then (* prin /\ prq /\ prq' /\ action *)
+            (isResultInQueryResult 
+                (Result Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+                (trans_agreement            
+                   (get_Sq_Env sq) (get_Sq_Agreement sq) 
+                   (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+          else (* prin /\ prq /\ prq' /\ ~action *)
+            (isResultInQueryResult 
+               (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+               (trans_agreement            
+                   (get_Sq_Env sq) (get_Sq_Agreement sq) 
+                   (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+         else (* prin /\ prq /\ ~prq' *)
+           (isResultInQueryResult 
+              (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+              (trans_agreement            
+                   (get_Sq_Env sq) (get_Sq_Agreement sq) 
+                   (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+      else (* prin /\ ~prq *)
+        (isResultInQueryResult 
+           (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+           (trans_agreement            
+                   (get_Sq_Env sq) (get_Sq_Agreement sq) 
+                   (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+    else (* ~prin *)
+      match (get_PS_From_Agreement (get_Sq_Agreement sq)) with
+        | PPS pps => 
+            match pps with 
+              | PIPS pips => 
+                  (isResultInQueryResult 
+                    (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+                    (trans_agreement            
+                      (get_Sq_Env sq) (get_Sq_Agreement sq) 
+                      (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+              | PEPS peps => 
+                  if (eq_nat_dec (get_Sq_Action sq) (get_Action_From_primPolicy pp))
+                  then
+                    (isResultInQueryResult 
+                       (Result NotPermitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+                       (trans_agreement            
+                          (get_Sq_Env sq) (get_Sq_Agreement sq) 
+                          (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+                  else
+                    (isResultInQueryResult 
+                       (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+                       (trans_agreement            
+                          (get_Sq_Env sq) (get_Sq_Agreement sq) 
+                          (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+            end
+      end
+   else
+     (isResultInQueryResult 
+        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+        (trans_agreement            
+           (get_Sq_Env sq) (get_Sq_Agreement sq) 
+           (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq))).
+Proof.
+destruct sq as [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
+
+destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
+intros pp H. simpl.
+destruct pp as [prq' pid action_from_policy]. simpl.
+destruct (trans_prin_dec subject_from_query prin_from_agreement).
+destruct (trans_preRequisite_dec env_from_query subject_from_query
+     (get_preRequisite_From_policySet ps) [pid] prin_from_agreement).
+unfold trans_policy_PIPS. simpl. simpl in H.
+destruct ps as [prim_policySet]. simpl.
 
 
+Theorem PermNotOrUnregulated:
+  forall (sq:single_query),
+if (act_in_agreement_dec (get_Sq_Action sq) (get_Sq_Agreement sq))
+then
+ if (eq_nat_dec (get_Sq_Asset sq) (get_Asset_From_Agreement (get_Sq_Agreement sq)))
+ then
+  if (trans_prin_dec (get_Sq_Subject sq)
+		    (get_Prin_From_Agreement ((get_Sq_Agreement sq))))
+  then (* prin *)
+   if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+          (get_preRequisite_From_policySet 
+             (get_PS_From_Agreement (get_Sq_Agreement sq)))
+          (get_IDs_From_policySet 
+             (get_PS_From_Agreement (get_Sq_Agreement sq)))
+          (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+   then (* prin /\ prq *)
+    if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
+          (get_policy_preRequisite_From_policySet
+             (get_PS_From_Agreement (get_Sq_Agreement sq)))
+          (get_IDs_From_policySet 
+             (get_PS_From_Agreement (get_Sq_Agreement sq)))
+          (get_Prin_From_Agreement (get_Sq_Agreement sq)))
+    then (* prin /\ prq /\ prq' *)
+      (isResultInQueryResult 
+        (Result Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
+            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+    else (* prin /\ prq /\ ~prq' *)
+      (isResultInQueryResult 
+        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
+            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+   else (* prin /\ ~prq *)
+     (isResultInQueryResult 
+        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
+            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+  else (* ~prin *)
+    (isResultInQueryResult 
+        (Result NotPermitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
+            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq))) \/
 
+    (isResultInQueryResult 
+        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
+            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+ else (* asset from query is not the same as the asset from the agreement *)
+    (isResultInQueryResult 
+        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
+            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
+else (* the action from query is not in the agreement *)
+   (isResultInQueryResult 
+        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
+        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
+            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq))).
 
+Proof.
+destruct sq as [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
+destruct (act_in_agreement_dec action_from_query agr).
+destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
+destruct (eq_nat_dec asset_from_query asset_from_agreement). simpl.
+destruct (trans_prin_dec subject_from_query prin_from_agreement). simpl. 
+destruct ps as [prim_policySet]. simpl.
+destruct (trans_preRequisite_dec env_from_query subject_from_query
+     (get_preRequisite_From_primPolicySet prim_policySet)
+     (get_IDs_From_primPolicySet prim_policySet) prin_from_agreement). simpl.
+destruct (trans_preRequisite_dec env_from_query subject_from_query
+     (get_policy_preRequisite_From_primPolicySet prim_policySet)
+     (get_IDs_From_primPolicySet prim_policySet) prin_from_agreement).
+destruct (trans_preRequisite_dec env_from_query subject_from_query
+     (get_policy_preRequisite_From_policySet ps) (get_IDs_From_policySet ps)
+     prin_from_agreement).
 
-
-
-
-
-
-
-
-
-
-
-
-End ZZZ.
+destruct (eq_nat_dec asset_from_query asset_from_agreement). simpl. 
+destruct prim_policySet as [proof_of_primInclusivePolicySet | proof_of_primExclusivePolicySet]. 
+destruct proof_of_primInclusivePolicySet as [prq_from_ps pol].
+unfold trans_policy_PIPS.
+destruct (trans_prin_dec subject_from_query prin_from_agreement).
+destruct (trans_preRequisite_dec env_from_query subject_from_query prq_from_ps
+        (getId pol) prin_from_agreement). 
+unfold trans_policy_positive.
+destruct pol as [primPolicies]. 
+induction primPolicies as [pp | pp' rest_pp]. simpl. 
+destruct pp as [prq' pid action_from_policy]. simpl.
+destruct (trans_preRequisite_dec env_from_query subject_from_query prq' [pid]
+        prin_from_agreement).
+destruct (eq_nat_dec action_from_query action_from_policy). simpl.
+unfold makeResult. subst. auto.
+simpl. simpl in i. contradiction.
+simpl. simpl in t1. contradiction.
+simpl. simpl in IHrest_pp.
 
 
 
