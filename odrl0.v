@@ -3529,15 +3529,7 @@ Definition get_Action_From_primPolicy (pp:primPolicy): act :=
    match pp with 
     | PrimitivePolicy prq pid action => action 
   end.
-Theorem eq_preRquisite_dec :
-  forall (x y:preRquisite), {x = y} + {x <> y}.
-Proof.
-   repeat decide equality.
 
-Theorem eq_primPolicy_dec :
-  forall (x y:primPolicy), {x = y} + {x <> y}.
-Proof.
-   repeat decide equality.
 Theorem primPolicy_in_policySet_dec :
   (forall (x y:primPolicy), {x = y} + {x <> y}) -> 
     forall (thePrimPolicy:primPolicy)(ps:policySet), 
@@ -3569,7 +3561,7 @@ right. unfold not. intros [Hc1| Hc2]; auto.
 
 Defined.
 
-Eval compute in (if (primPolicy_in_policySet_dec eq_nat_dec 10 (cons 3 (cons 4 (cons 5 nil)))) then 1 else 2).
+
 
 End primPolicyFromPS.
 
@@ -3623,7 +3615,7 @@ simpl. unfold makeResult. auto.
 Defined.
 
 
-
+(*
 
 
 
@@ -3810,6 +3802,6 @@ simpl. simpl in i. contradiction.
 simpl. simpl in t1. contradiction.
 simpl. simpl in IHrest_pp.
 
-
+*)
 
 End ODRL.
