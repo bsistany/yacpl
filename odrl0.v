@@ -3484,7 +3484,69 @@ apply AnswersNotEqual in H1. auto.
 intros contra'. inversion contra'.
 Defined.
 
+
 End ZZZ.
+
+
+Section ReasonablityProperties.
+Theorem trans_agreement_deterministic1:
+  forall
+  (e:environment)(ag:agreement)(action_from_query:act)
+   (subject_from_query:subject)(asset_from_query:asset),
+
+  forall (d': answer),
+   ((isResultInQueryResult 
+    (Result Permitted subject_from_query action_from_query asset_from_query)
+    (trans_agreement e ag action_from_query subject_from_query asset_from_query)) /\
+   (isResultInQueryResult 
+    (Result d' subject_from_query action_from_query asset_from_query)
+    (trans_agreement e ag action_from_query subject_from_query asset_from_query))) 
+ 
+ -> (d' <> NotPermitted).
+
+Proof.
+intros e ag action_from_query subject_from_query asset_from_query d'.
+intros H.
+destruct H as [H1 H2].
+intros H'. subst. 
+apply trans_agreement_not_Perm_and_NotPerm_at_once with 
+   e ag action_from_query subject_from_query asset_from_query.
+split.
+exact H1.
+exact H2.
+Qed.
+
+Theorem trans_agreement_deterministic2:
+  forall
+  (e:environment)(ag:agreement)(action_from_query:act)
+   (subject_from_query:subject)(asset_from_query:asset),
+
+  forall (d': answer),
+   ((isResultInQueryResult 
+    (Result NotPermitted subject_from_query action_from_query asset_from_query)
+    (trans_agreement e ag action_from_query subject_from_query asset_from_query)) /\
+   (isResultInQueryResult 
+    (Result d' subject_from_query action_from_query asset_from_query)
+    (trans_agreement e ag action_from_query subject_from_query asset_from_query))) 
+ 
+ -> (d' <> Permitted).
+
+Proof.
+intros e ag action_from_query subject_from_query asset_from_query d'.
+intros H.
+destruct H as [H1 H2].
+intros H'. subst. 
+apply trans_agreement_not_Perm_and_NotPerm_at_once with 
+   e ag action_from_query subject_from_query asset_from_query.
+split.
+exact H2.
+exact H1.
+Qed.
+
+
+
+End ReasonablityProperties.
+
 
 Section primPolicyFromPS.
 Fixpoint is_primPolicy_in_primPolicies (thePrimPolicy:primPolicy)(l:nonemptylist primPolicy){struct l}  : Prop :=
