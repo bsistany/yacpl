@@ -3554,109 +3554,6 @@ right; unfold not; intros [Hc1| Hc2]; auto.
 Defined.
 
 
-Theorem trans_policy_positive_dec3:
-  forall 
-(e:environment)(s:subject)(p:policy)(prin_u:prin)(a:asset)
-  (action_from_query: act),
-  
-  
-  {(isResultInQueryResult 
-    (Result Permitted s action_from_query a)
-    (trans_policy_positive e s p prin_u a action_from_query))} +
-
-  {~(isResultInQueryResult 
-    (Result Permitted s action_from_query a)
-    (trans_policy_positive e s p prin_u a action_from_query))}.
-
-Proof.
-
-intros e s p prin_u a action_from_query.
-specialize resultInQueryResult_dec with 
-  (res:= (Result Permitted s action_from_query a)) 
-  (results := (trans_policy_positive e s p prin_u a action_from_query)).
-intros H. exact H.
-Defined.
-
-
- 
-
-Theorem trans_policy_positive_dec2:
-  forall 
-(e:environment)(s:subject)(p:policy)(prin_u:prin)(a:asset)
-  (action_from_query: act),
-  
-  
-  (isResultInQueryResult 
-    (Result Permitted s action_from_query a)
-    (trans_policy_positive e s p prin_u a action_from_query)) 
-\/
-
-  (~(isResultInQueryResult 
-    (Result Permitted s action_from_query a)
-    (trans_policy_positive e s p prin_u a action_from_query)) /\
-   ~(isResultInQueryResult 
-    (Result NotPermitted s action_from_query a)
-    (trans_policy_positive e s p prin_u a action_from_query))).
-
-Proof.
-intros e s p prin_u a action_from_query.
-specialize trans_policy_positive_dec3 with e s p prin_u a action_from_query.
-intros H. destruct H as [H1|H2].
-left. exact H1.
-right. split. exact H2.
-specialize trans_policy_positive_dec_not with e s p prin_u a action_from_query.
-intros H.
-exact H.
-Defined.
-
-
-Theorem trans_policy_PIPS_dec2:
-  forall
-  (e:environment)(prq: preRequisite)(p:policy)(subject_from_query:subject)
-  (prin_u:prin)(a:asset)(action_from_query:act),
-
- (isResultInQueryResult 
-    (Result Permitted subject_from_query action_from_query a)
-    (trans_policy_PIPS e prq p subject_from_query prin_u a action_from_query)) 
-\/
-
-  (~(isResultInQueryResult 
-    (Result Permitted subject_from_query action_from_query a)
-    (trans_policy_PIPS e prq p subject_from_query prin_u a action_from_query)) /\
-   ~(isResultInQueryResult 
-    (Result NotPermitted subject_from_query action_from_query a)
-    (trans_policy_PIPS e prq p subject_from_query prin_u a action_from_query))).	
-	
-Proof.
-
-intros e prq p subject_from_query prin_u a action_from_query.
-
-Admitted.
-
-Theorem trans_ps_dec2:
-  forall
-  (e:environment)(action_from_query:act)(subject_from_query:subject)(asset_from_query:asset)
-  (ps:policySet)
-  (prin_u:prin)(a:asset),
-
-
- (isResultInQueryResult 
-    (Result Permitted subject_from_query action_from_query asset_from_query)
-    (trans_ps e action_from_query subject_from_query asset_from_query ps prin_u a)) 
-\/
-
- (isResultInQueryResult 
-    (Result NotPermitted subject_from_query action_from_query asset_from_query)
-    (trans_ps e action_from_query subject_from_query asset_from_query ps prin_u a))
-\/
-
- (~(isResultInQueryResult 
-    (Result Permitted subject_from_query action_from_query asset_from_query)
-    (trans_ps e action_from_query subject_from_query asset_from_query ps prin_u a)) /\
-  ~(isResultInQueryResult 
-    (Result NotPermitted subject_from_query action_from_query asset_from_query)
-    (trans_ps e action_from_query subject_from_query asset_from_query ps prin_u a))).
-
 Theorem trans_agreement_dec_sb_Permitted:
   forall
   (e:environment)(ag:agreement)(action_from_query:act)
@@ -3769,7 +3666,7 @@ exact H.
 Defined.
 
 
-Theorem trans_agreement_dec22:
+Theorem trans_agreement_decidable:
   forall
   (e:environment)(ag:agreement)(action_from_query:act)
    (subject_from_query:subject)(asset_from_query:asset),
@@ -3796,6 +3693,24 @@ End ZZZ.
 
 
 Section ReasonablityProperties.
+
+Theorem trans_agreement_deterministic:
+  forall
+  (e:environment)(ag:agreement)(action_from_query:act)
+   (subject_from_query:subject)(asset_from_query:asset)(d: answer),
+
+   (isResultInQueryResult 
+    (Result d subject_from_query action_from_query asset_from_query)
+    (trans_agreement e ag action_from_query subject_from_query asset_from_query)) ->
+
+   (isResultInQueryResult 
+    (Result d subject_from_query action_from_query asset_from_query)
+    (trans_agreement e ag action_from_query subject_from_query asset_from_query)).
+Proof.
+auto.
+Defined.
+
+
 Theorem trans_agreement_deterministic1:
   forall
   (e:environment)(ag:agreement)(action_from_query:act)
