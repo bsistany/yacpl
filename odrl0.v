@@ -3492,6 +3492,11 @@ Inductive decidable : environment -> agreement -> act -> subject -> asset -> Pro
  (isResultInQueryResult 
     (Result NotPermitted subject_from_query action_from_query asset_from_query)
        (trans_agreement e ag action_from_query subject_from_query asset_from_query)) 
+  ->
+ ~(isResultInQueryResult 
+    (Result Permitted subject_from_query action_from_query asset_from_query)
+       (trans_agreement e ag action_from_query subject_from_query asset_from_query)) 
+
   -> decidable e ag action_from_query subject_from_query asset_from_query
 
      | Granted : forall
@@ -3500,7 +3505,12 @@ Inductive decidable : environment -> agreement -> act -> subject -> asset -> Pro
  (isResultInQueryResult 
     (Result Permitted subject_from_query action_from_query asset_from_query)
        (trans_agreement e ag action_from_query subject_from_query asset_from_query)) 
-  -> decidable e ag action_from_query subject_from_query asset_from_query
+ ->
+ ~(isResultInQueryResult 
+    (Result NotPermitted subject_from_query action_from_query asset_from_query)
+       (trans_agreement e ag action_from_query subject_from_query asset_from_query)) 
+ 
+ -> decidable e ag action_from_query subject_from_query asset_from_query
 
      | NonApplicable : forall
   (e:environment)(ag:agreement)(action_from_query:act)
@@ -3536,6 +3546,24 @@ simpl. unfold makeResult.
 simpl in n. firstorder.
 simpl. unfold makeResult.
 simpl in n. firstorder.
+
+simpl.
+unfold trans_policy_PIPS.
+destruct (trans_prin_dec Alice [Alice]).
+destruct (trans_preRequisite_dec eA1 Alice TruePrq
+        (getId (Policy [PrimitivePolicy (Constraint (Count 5)) id1 Print]))
+        [Alice]).
+simpl.
+destruct (trans_preRequisite_dec eA1 Alice (Constraint (Count 5)) [id1] [Alice]).
+simpl. unfold makeResult.
+apply AnswersNotEqual. intuition. inversion H.
+
+simpl. unfold makeResult.
+apply AnswersNotEqual. intuition. inversion H.
+simpl. unfold makeResult.
+apply AnswersNotEqual. intuition. inversion H.
+simpl. unfold makeResult.
+apply AnswersNotEqual. intuition. inversion H.
 Qed.
 
 Theorem resultInQueryResult_dec :
@@ -3678,8 +3706,14 @@ specialize trans_agreement_dec2 with
 intros H. destruct H as [H1 | H2].
 
 apply Granted. assumption.
+simpl. intuition.
+apply trans_agreement_perm_implies_not_notPerm_dec in H1. contradiction. 
+
 destruct H2 as [H21 | H22].
 apply Denied. assumption.
+simpl. intuition.
+apply trans_agreement_NotPerm_implies_not_Perm_dec in H21. contradiction. 
+
 apply NonApplicable. 
 destruct H22 as [H221 H222].
 exact H221.
