@@ -342,8 +342,9 @@ Definition environment := nonemptylist count_equality.
     Assumes e is consistent, so it returns the first count it sees for a (subject, id) pair.
 	If a count for a (subject, id) pair is not found it returns 0. **)
 
-Fixpoint getCount_old
+Fixpoint getCount
   (e:environment)(s:subject)(id: policyId): nat :=
+
   match e with
   | SingleEnv f  =>
       match f with
@@ -356,8 +357,8 @@ Fixpoint getCount_old
       match f with
 	  | CountEquality s1 id1 n1 =>
 	  if (beq_nat s s1)
-	  then if (beq_nat id id1) then n1 else (getCount_old rest s id)
-	  else (getCount_old rest s id)
+	  then if (beq_nat id id1) then n1 else (getCount rest s id)
+	  else (getCount rest s id)
       end
   end.
 
@@ -608,22 +609,66 @@ Fixpoint getId (p:policy) : nonemptylist policyId :=
 end.
 
 
-Fixpoint trans_count_aux_old (e:environment)(ids_and_subjects : nonemptylist (Twos policyId subject)) : nat :=
+Fixpoint trans_count_aux (e:environment)(ids_and_subjects : nonemptylist (Twos policyId subject)) : nat :=
   match ids_and_subjects with
-	| Single pair1 => getCount_old e (right pair1) (left pair1)
+	| Single pair1 => getCount e (right pair1) (left pair1)
 	| NewList pair1 rest_pairs =>
-	    (getCount_old e (right pair1)(left pair1)) +
-	    (trans_count_aux_old e rest_pairs)
+	    (getCount e (right pair1)(left pair1)) +
+	    (trans_count_aux e rest_pairs)
   end.
 
+Theorem getCountGtEqualZero:
+  forall (e:environment)(s:subject)(id: policyId),
+    (getCount e s id) >= 0.
+Proof.
+intros. destruct e. destruct c.
+unfold getCount.
+case_eq (beq_nat s s0).
+intuition.
+intuition.
+destruct c.
+unfold getCount.
+case_eq (beq_nat s s0).
+intuition.
+intuition.
+Qed.
 
-Fixpoint trans_count_old
+Theorem trans_count_auxGtEqualZero:
+  forall (e:environment)(ids_and_subjects : nonemptylist (Twos policyId subject)),
+    (trans_count_aux e ids_and_subjects) >= 0.
+Proof.
+intros. destruct e. destruct c. unfold trans_count_aux. induction ids_and_subjects.
+apply getCountGtEqualZero. intuition.
+destruct c. unfold trans_count_aux. induction ids_and_subjects.
+apply getCountGtEqualZero. intuition.
+Qed.
+Theorem trans_count_aux_dec: 
+  forall (e:environment)(ids_and_subjects : nonemptylist (Twos policyId subject))(n:nat), 
+    {trans_count_aux e ids_and_subjects < n} + 
+ {~ (trans_count_aux e ids_and_subjects < n)}.
+Proof.
+intros.
+case (lt_dec (trans_count_aux e ids_and_subjects) n).
+intros H'. auto.
+intros H'. auto.
+Defined.
+
+Fixpoint trans_count
   (e:environment)(n:nat)(IDs:nonemptylist policyId)
   (prin_u:prin) : Prop :=
   let ids_and_subjects := process_two_lists IDs prin_u in
-  let running_total := trans_count_aux_old e ids_and_subjects in
+  let running_total := trans_count_aux e ids_and_subjects in
   running_total < n.
 
+Theorem trans_count_dec: 
+  forall (e:environment)(n:nat)(IDs:nonemptylist policyId)(prin_u:prin), 
+    {trans_count e n IDs prin_u} + {~ trans_count e n IDs prin_u}.
+Proof.
+intros.
+destruct e. simpl.
+apply trans_count_aux_dec. simpl.
+apply trans_count_aux_dec.
+Defined.
 
 Definition trans_count_333 (n:nat) : nat -> Prop :=
   (fun running_total : nat => running_total < n).
@@ -631,7 +676,7 @@ Definition trans_count_333 (n:nat) : nat -> Prop :=
 Definition trans_count_444 (n:nat) : Prop :=
  forall (running_total:nat), running_total < n.
 
-Definition trans_count (n:nat) : Prop :=
+Definition trans_count_old2 (n:nat) : Prop :=
   let running_total := 4 in (** this is some nat for now. 
                                 As far as proofs are concerned it 
                                 doesn't matter how we obtain it so '4' will do
@@ -646,9 +691,9 @@ Fixpoint trans_constraint
   match const with
     | Principal prn => trans_prin x prn
 
-    | Count n => trans_count n
+    | Count n => trans_count e n IDs prin_u
 
-    | CountByPrin prn n => trans_count n
+    | CountByPrin prn n => trans_count e n IDs prn
 
   end.
 
@@ -849,16 +894,6 @@ Qed.
 
 
 
-
-Theorem trans_count_dec :
-   forall (n:nat),
-     {trans_count n} + {~trans_count n}.
-
-Proof.
-intros.
-apply lt_dec. 
-
-Defined.
 
 
 (*** HERE I am : May 22, 2015, 1:04. ***)
