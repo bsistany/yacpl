@@ -154,7 +154,6 @@ Definition id4:policyId := 204.
 
 Inductive constraint : Set :=
   | Principal : prin  -> constraint
-  (*| ForEachMember : prin  -> nonemptylist constraint -> constraint *)
   | Count : nat -> constraint
   | CountByPrin : prin -> nat -> constraint.
 
@@ -162,7 +161,6 @@ Inductive constraint : Set :=
 Inductive preRequisite : Set :=
   | TruePrq : preRequisite
   | Constraint : constraint -> preRequisite
- (* | ForEachMember : prin  -> nonemptylist constraint -> preRequisite *)
   | NotCons : constraint -> preRequisite
   | AndPrqs : nonemptylist preRequisite -> preRequisite
   | OrPrqs : nonemptylist preRequisite -> preRequisite
@@ -193,7 +191,6 @@ Inductive andPolicySet : Set :=
 
 Inductive policySet : Set :=
   | PPS : primPolicySet -> policySet.
-  (*| APS : andPolicySet -> policySet.*)
 
 
 Inductive agreement : Set :=
@@ -244,12 +241,6 @@ Definition is_act_in_policySet (ac:act)(ps:policySet): Prop :=
 
   match ps with
     | PPS pps => is_act_in_prim_policySet ac pps     
-(*            
-    | APS aps => match aps with 
-                 | AndPolicySet ppolicysets => 
-                     is_act_in_primPolicySets ac ppolicysets
-               end
-*)  
 end.
 
 Definition is_act_in_agreement (ac:act)(agr: agreement) : Prop :=
@@ -280,10 +271,6 @@ Definition p2A1:primPolicySet :=
       (Single 
         (PrimitivePolicy (AndPrqs (NewList p2A1prq1 (Single p2A1prq2))) id2 Print)))).
 
-(*
-Definition A1 := Agreement (NewList Alice (Single Bob)) TheReport
-		  (APS (AndPolicySet (NewList p1A1 (Single p2A1)))).
-*)
 Definition A1 := Agreement (NewList Alice (Single Bob)) TheReport (PPS p1A1).
 		
 
@@ -326,9 +313,6 @@ Inductive environment : Set :=
   | SingleEnv : count_equality -> environment
   | ConsEnv :  count_equality ->  environment -> environment.
 
-(*
-Definition environment := nonemptylist count_equality.
-*)
 
 (** New getCount: simply return a number since for formal verification purposes
     it doesn't matter what that number is. The only thing that matters
@@ -382,13 +366,6 @@ Eval compute in (inconsistent f1 f2).
 
 
 Eval compute in (6 <> 7).
-(*
-Inductive sorted : list nat -> Prop :=
-  snil : sorted nil
-| s1 : forall x, sorted (x::nil)
-| s2 : forall x y l, sorted (y::l) -> x <= y ->
-    sorted (x::y::l).
-*)
 
 
 Fixpoint formula_inconsistent_with_env (f: count_equality)
@@ -407,68 +384,28 @@ Inductive env_consistent : environment -> Prop :=
    env_consistent e -> ~(formula_inconsistent_with_env f e) -> env_consistent (ConsEnv f e).
 
 
-(*
-Fixpoint get_list_of_pairs_of_count_formulas (e : environment) :
-  nonemptylist (Twos count_equality count_equality) :=
-
-    let nullCountFormula:count_equality := make_count_equality NullSubject NullId 0 in
-      let list_of_pairs_of_null : nonemptylist (Twos count_equality count_equality)
-	:=  Single (mkTwos nullCountFormula nullCountFormula) in
-
-	  match e with
-	    | Single f => list_of_pairs_of_null
-	    | NewList first (Single f) => Single (mkTwos first f)
-	    | NewList first rest =>
-	      let twos := process_two_lists (Single first) rest in
-		app_nonempty twos (get_list_of_pairs_of_count_formulas rest)
-
-	  end.
-*)
 (* test the first clause: single count formula should return a pair of null count formulas *)
 Definition e1 : environment :=
   (SingleEnv (make_count_equality Alice id1 8)).
-(*
-Eval compute in (get_list_of_pairs_of_count_formulas e1).
-*)
 
 (* test the second clause: two count formulas should return a pair of the two count formulas *)
 Definition e2 : environment := (ConsEnv f1 (SingleEnv f2)).
-(*
-Eval compute in (get_list_of_pairs_of_count_formulas e2).
-*)
 
 (* test the third case: three count formulas should return a list of 3 pairs of count formulas *)
 Definition e3 : environment :=
   (ConsEnv (make_count_equality Alice id1 8)
      (ConsEnv (make_count_equality Bob id2 9) (SingleEnv (make_count_equality Charlie id3 10)))).
-(*
-Eval compute in (get_list_of_pairs_of_count_formulas e3).
-*)
+
 (* test the third case with 4 count formulas: should return a list of 6 pairs of count formulas *)
 Definition e4 : environment :=
   (ConsEnv (make_count_equality Alice id1 8)
      (ConsEnv (make_count_equality Bob id2 9)
 	(ConsEnv (make_count_equality Charlie id3 10)
 	  (SingleEnv (make_count_equality Bahman id4 11))))).
-(*
-Eval compute in (get_list_of_pairs_of_count_formulas e4).
-*)
 (****************************************)
 (****************************************)
 
-(*** set of E-relevant models is Empty <=> e is inconsistent ***)
-(*** set of E-relevant models is Non-Empty <=> e is consistent ***)
-(*
-Fixpoint env_consistent_old (e : environment) : Prop :=
-  let pairs : nonemptylist (Twos count_equality count_equality) := (get_list_of_pairs_of_count_formulas e) in
-    let pairs_consistent :=
-      (fix pairs_consistent (pairs : nonemptylist (Twos count_equality count_equality)) : Prop :=
-	match pairs with
-	  | Single p => inconsistent (left p) (right p)
-	  | NewList p rest =>  inconsistent (left p) (right p) /\ (pairs_consistent rest)
-	end) in
-  pairs_consistent pairs.
-*)
+
 
 
 Eval compute in (env_consistent e2).
@@ -536,27 +473,6 @@ End Results.
 Section Sems.
 
 
-(*
-Parameter Permitted : subject -> act -> asset -> Prop.
-
-
-Parameter Unregulated : subject -> act -> asset -> Prop.
-*)
-
-(* Parameter getCount : subject -> policyId -> nat. *)
-
-
-(*** Environments: in odrl0 are simply a conjunction of positive ground literals of the form count(s, id)= n ***)
-
-(** A clause is a list (disjunction) of literals. *)
-(* Definition formula := Prop. *)
-
-
-(** A formula is a list (conjunction) of clauses. *)
-(* Definition formula := list clause. *)(** conjuction *)
-
-
-
 
 Definition eq_type := nat -> nat -> Prop.
 
@@ -599,12 +515,6 @@ Fixpoint getId (p:policy) : nonemptylist policyId :=
 
 	  end) in
   match p with
-(*
-    | PP pp => 
-       match pp with
-         | PrimitivePolicy prereq pid action => Single pid
-       end
-*)
     | Policy policies => getIds policies
 end.
 
@@ -709,9 +619,6 @@ Definition trans_preRequisite
   match prq with
     | TruePrq => True
     | Constraint const => trans_constraint e x const IDs prin_u
-(*
-    | ForEachMember prn const_list => trans_forEachMember e x prn const_list IDs
-*)
     | NotCons const => trans_notCons e x const IDs prin_u
     | AndPrqs prqs => True (*trans_andPrqs x prq IDs prin_u a*)
     | OrPrqs prqs => True (*trans_orPrqs x prq IDs prin_u a*)
@@ -774,29 +681,6 @@ Fixpoint trans_pp_list_trans_policy_negative
 Fixpoint trans_policy_negative
   (e:environment)(x:subject)(p:policy)(a:asset)
   (action_from_query: act){struct p} : nonemptylist result :=
-(*
-let process_single_pp := 
- (fix process_single_pp (pp: primPolicy) : nonemptylist result :=
-  match pp with
-    | PrimitivePolicy prq policyId action => 
-        if (eq_nat_dec action_from_query action)
-        then 
-            (Single 
-              (makeResult NotPermitted x action_from_query a))
-        else 
-            (Single 
-              (makeResult Unregulated x action_from_query a))
-  end) in
-
-let trans_pp_list := 
-  (fix trans_pp_list (pp_list:nonemptylist primPolicy)(a:asset){struct pp_list}:=
-		  match pp_list with
-		    | Single pp1 => process_single_pp_trans_policy_negative pp1
-		    | NewList pp pp_list' => app_nonempty
-			(p pp) 
-			(trans_pp_list pp_list' a)
-		  end) in
-*)
 
   match p with
   
@@ -864,41 +748,6 @@ Proof.
 Defined.
 
 
-(*
-Theorem getCountGtEqualZero:
-  forall (e:environment)(s:subject)(id: policyId),
-    (getCount e s id) >= 0.
-Proof.
-intros. destruct e. destruct c.
-unfold getCount.
-case_eq (beq_nat s s0).
-intuition.
-intuition.
-destruct c.
-unfold getCount.
-case_eq (beq_nat s s0).
-intuition.
-intuition.
-Qed.
-
-Theorem trans_count_auxGtEqualZero:
-  forall (e:environment)(ids_and_subjects : nonemptylist (Twos policyId subject)),
-    (trans_count_aux e ids_and_subjects) >= 0.
-Proof.
-intros. destruct e. destruct c. unfold trans_count_aux. induction ids_and_subjects.
-apply getCountGtEqualZero. intuition.
-destruct c. unfold trans_count_aux. induction ids_and_subjects.
-apply getCountGtEqualZero. intuition.
-Qed.
-*)
-
-
-
-
-
-(*** HERE I am : May 22, 2015, 1:04. ***)
-
-
 Theorem trans_constraint_dec :
 forall (e:environment)(x:subject)
 (const:constraint)(IDs:nonemptylist policyId)(prin_u:prin),
@@ -915,37 +764,6 @@ apply trans_count_dec.
 simpl.
 apply trans_count_dec.
 Defined.
-
-(***
-Theorem trans_forEachMember_Aux_dec :
-  forall (e:environment)
-         (x:subject)
-         (prins_and_constraints : nonemptylist (Twos subject constraint))
-	 (IDs:nonemptylist policyId),
-   {trans_forEachMember_Aux e x prins_and_constraints IDs} +
-   {~ trans_forEachMember_Aux e x prins_and_constraints IDs}.
-Proof.
-intros e x prins_and_constraints IDs. 
-unfold trans_forEachMember_Aux.
-induction prins_and_constraints.
-apply trans_constraint_dec.
-simpl. 
-
-
-Theorem trans_forEachMember_dec :
- forall (e:environment)(x:subject)
-  (principals: nonemptylist subject)
-  (const_list:nonemptylist constraint)
-  (IDs:nonemptylist policyId),
-    {trans_forEachMember e x principals const_list IDs} +
-    {~trans_forEachMember e x principals const_list IDs}.
-
-Proof.
-intros e x principals const_list IDs.
-unfold trans_forEachMember. simpl.
-
-***)
-
 
 
 
@@ -1019,13 +837,7 @@ Theorem act_in_policy_dec :
 
 Proof.
 intros ac p. induction p.
-
- apply act_in_primPolicies_dec.
- (*
- destruct a. 
- pose (proof_of_act_in_primPolicies_dec := act_in_primPolicies_dec ac n).
- unfold is_act_in_policy. apply proof_of_act_in_primPolicies_dec. 
- *)
+apply act_in_primPolicies_dec.
 Defined.
 
 Theorem act_in_primPolicySet_dec :
@@ -1035,7 +847,8 @@ Theorem act_in_primPolicySet_dec :
 Proof.
 intros ac pps. destruct pps. 
  destruct p; apply act_in_policy_dec.
- destruct p; apply act_in_policy_dec. Defined.
+ destruct p; apply act_in_policy_dec. 
+Defined.
 
 
 Theorem act_in_primPolicySets_dec:
@@ -1056,13 +869,7 @@ Theorem act_in_policySet_dec :
 
 Proof.
 intros ac p. induction p.
-
- apply act_in_primPolicySet_dec. 
-(* 
- destruct a. 
- pose (proof_of_act_in_primPolicySets_dec := act_in_primPolicySets_dec ac n).
- unfold is_act_in_policySet; apply proof_of_act_in_primPolicySets_dec. 
-*)
+apply act_in_primPolicySet_dec. 
 Defined.
 
 Theorem act_in_agreement_dec :
@@ -1108,42 +915,8 @@ Fixpoint trans_pp_list_trans_policy_positive
 Definition trans_policy_positive
   (e:environment)(x:subject)(p:policy)(prin_u:prin)(a:asset)
   (action_from_query: act) : nonemptylist result :=
-(*
-let process_single_pp := 
-  (fix process_single_pp (pp: primPolicy) : nonemptylist result :=
-  match pp with
-    | PrimitivePolicy prq' policyId action =>
-        if (trans_preRequisite_dec e x prq' (Single policyId) prin_u)
-        then (* prin /\ prq /\ prq' *)
-          if (eq_nat_dec action_from_query action)
-          then
-            (Single 
-              (makeResult Permitted x action_from_query a))
-            (*(Permitted x action_from_query a)*)
-          else
-            (Single 
-              (makeResult Unregulated x action_from_query a))
-            (*(Unregulated x action_from_query a)*)
-        else (* prin /\ prq /\ ~prq' *)
-          (Single 
-              (makeResult Unregulated x action_from_query a))
-          (*(Unregulated x action_from_query a)*)
-  end) in 
-
-let trans_pp_list := 
-  (fix trans_pp_list (pp_list:nonemptylist primPolicy)(prin_u:prin)(a:asset){struct pp_list}:=
-		  match pp_list with
-		    | Single pp1 => process_single_pp_trans_policy_positive pp1
-		    | NewList pp pp_list' => app_nonempty
-			(process_single_pp_trans_policy_positive pp) 
-			(trans_pp_list pp_list' prin_u a)
-		  end) in
-*)
   match p with
-(*
-  | PP pp => process_single_pp pp 
-*)  
-  | Policy pp_list => trans_pp_list_trans_policy_positive pp_list e x prin_u a action_from_query
+    | Policy pp_list => trans_pp_list_trans_policy_positive pp_list e x prin_u a action_from_query
   end.
 
 
@@ -1230,108 +1003,6 @@ Definition trans_agreement
    end.
 End Sems.
 
-(********
-Inductive nonemptylist (A : Set) : Set :=
-  | Single : A -> nonemptylist
-  | NewList : A -> nonemptylist -> nonemptylist.
-
-if a property is true for the Single case, and if it holds for a list l 
-then it also holds for cons a l for any a, then it holds for all lists.
-
-fun (A : Set) (P : nonemptylist A -> Prop) => nonemptylist_rect P
-     : forall (A : Set) (P : nonemptylist A -> Prop),
-
-       (forall x : A, P [x]) // if a property is true for x
-       // and if it holds for a nonemptylist n then it also holds for 'NewList x n' for any x
-       -> (forall (x : A) (n : nonemptylist A), P n -> P (x, n)) 
-       -> forall n : nonemptylist A, P n // then it holds for all nonemptylists.
-
-Theorem ind_nonemptylist : 
-
-forall (X : Set) 
-       (P : environment -> preRequisite -> nonemptylist X -> prin -> asset -> act -> Prop),
-       (forall (e:environment)(prq: preRequisite)
-          (prin_u:prin)(a:asset)(action_from_query:act)(x : X), 
-             (P e prq [x] prin_u a action_from_query))
-        -> (forall (e:environment)(prq: preRequisite)
-          (prin_u:prin)(a:asset)(action_from_query:act)(x : X)(n : nonemptylist X), 
-              (P e prq n prin_u a action_from_query) -> 
-                 (P e prq (x, n) prin_u a action_from_query))
-        -> forall (e:environment)(prq: preRequisite)
-          (prin_u:prin)(a:asset)(action_from_query:act)(n : nonemptylist X), 
-              (P e prq n prin_u a action_from_query).
-Proof.
-intros X P hSingle hNewList e prq prin_u a action_from_query n.
-induction n.
-specialize hSingle with e prq prin_u a action_from_query x.
-exact hSingle.
-
-apply hNewList.
-exact IHn.
-Qed.
-*****)
-
-(*
-Theorem trans_policy_PIPS_dec:
-  forall (e:environment)(prq: preRequisite)(p:policy)
-  (prin_u:prin)(a:asset)(action_from_query:act)(sub:subject),
-
-(trans_policy_PIPS e prq p prin_u a action_from_query) ->
-  ((Permitted sub action_from_query a) \/
-  ~(Permitted sub action_from_query a) \/
-   (Unregulated sub action_from_query a)).
-Proof.
-intros e prq p prin_u a action_from_query sub.
-destruct p. 
-induction n as [| x rest IHn].
-unfold trans_policy_PIPS. 
-intros H.
-specialize H with sub.
-destruct (trans_prin_dec sub prin_u).
-destruct (trans_preRequisite_dec e sub prq (getId (Policy [x])) prin_u).
-simpl in H.
-destruct x as [prq' pid action_from_policy].
-destruct (trans_preRequisite_dec e sub prq' [pid] prin_u).
-destruct (eq_nat_dec action_from_query action_from_policy).
-left. exact H.
-right. right. exact H.
-right. right. exact H.
-simpl in H.
-right. right. exact H.
-simpl in H.
-right. right. exact H.
-intros H. 
-
-apply IHn.
-
-assert (trans_policy_PIPS e prq (Policy [x]) prin_u a action_from_query).
-destruct x as [prq' pid action_from_policy].
-unfold trans_policy_PIPS. 
-intros.
-destruct (trans_prin_dec x prin_u).
-destruct (trans_preRequisite_dec e x prq
-     (getId (Policy [PrimitivePolicy prq' pid action_from_policy])) prin_u). simpl.
-destruct (trans_preRequisite_dec e x prq' [pid] prin_u).
-destruct (eq_nat_dec action_from_query action_from_policy).
-
-
-simpl.
-destruct (trans_preRequisite_dec e sub prq' [pid] prin_u).
-destruct (eq_nat_dec action_from_query action_from_policy).
-left. exact H.
-right. right. exact H.
-right. right. exact H.
-simpl in H.
-right. right. exact H.
-destruct x. 
-
-unfold trans_policy_PIPS in H.
-specialize H with sub.
-destruct (trans_prin_dec sub prin_u).
-destruct (trans_preRequisite_dec e sub prq (getId (Policy (p, n))) prin_u).
-simpl in H.
-
-*)
 
 
 
@@ -1353,12 +1024,6 @@ Definition get_PS_From_Agreement(agr:agreement): policySet :=
 
 (***** 3.1 *****)
 
-(**
-Eval simpl in (trans_ps e1 policySet2_5 prins2_5 ebook).
-
-Eval compute in (trans_ps e2 policySet2_5 prins2_5 ebook).
-
-**)
 
 
 (*** Canonical Agreement example ***)
@@ -1533,27 +1198,6 @@ assert (Alice=Alice). auto. contradiction.
 Qed.
 
 
-(*
-Hypothesis BobNotInPrin: not (trans_prin Bob (get_Prin_From_Agreement AgreeA2)).
-
-Theorem BobUnregulated: 
-(QueryResult (Single (makeResult Unregulated Bob Print TheReport))).
-
-Proof.
-simpl in H.
-simpl in BobNotInPrin.
-
-specialize H with Bob TheReport.
-
-
-destruct (eq_nat_dec TheReport TheReport).
-specialize H with Print.
-unfold trans_policy_PIPS in H.
-specialize H with Bob. simpl in H.
-exact H. specialize H with Print.
-exact H. 
-Qed.
-*)
 
 (* don't use the hypothesis. Add it directy to the Theorem statement *)
 
@@ -1593,45 +1237,11 @@ End A2.
 
 Section A3.
 
-(***
-Theorem FFF: 8<10.
-Proof. apply le_S. apply le_n. Qed.
-
-le_n : forall n : nat, n <= n
-le_S : : forall n m : nat, n <= m -> n <= S m.
-***)
-
-(**
-Definition AgreeA3 := Agreement prins2_5 ebook policySet2_5.
-**)
-
-(**
-Definition eA3 : environment :=
-  (NewList (make_count_equality Alice id1 3)
-     (NewList (make_count_equality Alice id2 11)
-	(NewList (make_count_equality Bob id1 6)
-	  (Single (make_count_equality Bob id2 1))))).
-Eval compute in (trans_agreement eA3 AgreeA3).
-
-forall x : nat,
-       (x = 101 \/ x = 102) /\ 22 <= 10 ->
-       (4 <= 5 /\ 7 <= 5 -> Permitted x "Display" "ebook") /\
-       (12 <= 1 /\ 2 <= 1 -> Permitted x "Print" "ebook")
-     : Prop
-
-**)
 Definition eA3 : environment :=
   (ConsEnv (make_count_equality Alice id1 3)
      (ConsEnv (make_count_equality Alice id2 0)
 	(ConsEnv (make_count_equality Bob id1 4)
 	  (SingleEnv (make_count_equality Bob id2 0))))).
-(**
-Eval compute in (trans_agreement eA3 AgreeA3).
-Hypothesis H: trans_agreement eA3 AgreeA3.
-
-Theorem T1_A3: Permitted Alice Print ebook.
-Proof. simpl in H. apply H. intuition. intuition. Qed.
-**)
 End A3.
 
 
@@ -1700,15 +1310,6 @@ simpl in t. contradiction.
 simpl in n. intuition.
 simpl. unfold makeResult.
 right. auto. Qed.
-(*
-destruct (Peano_dec.eq_nat_dec sub Bob).
-destruct (trans_preRequisite_dec eA5 sub TruePrq (id1, [id3]) prin_bob).
-destruct (trans_preRequisite_dec eA5 sub TruePrq [id1] prin_bob).
-destruct (eq_nat_dec ac Display).
-destruct H as [H1 H2]. 
-destruct (trans_preRequisite_dec eA5 sub TruePrq [id3] prin_bob).
-destruct (eq_nat_dec ac Print).
-*)
 Theorem T2_A5: isPermissionDenied Alice Print LoveAndPeace 
   (trans_agreement eA5 AgreeA5_two Print Alice LoveAndPeace).
 
@@ -1719,28 +1320,6 @@ apply T1_A5.
 
 intuition. inversion H. Qed.
 
-(*
-simpl in H. 
-
-specialize H with Alice LoveAndPeace.
-destruct (eq_nat_dec LoveAndPeace LoveAndPeace).
-
-specialize H with Print Alice.
-
-destruct (Peano_dec.eq_nat_dec Alice Bob). 
-destruct (trans_preRequisite_dec eA5 Alice TruePrq [id3] prin_bob).
-
-assert (Alice <> Bob). intuition. inversion H0. contradiction.
-assert (trans_preRequisite eA5 Alice TruePrq [id3] prin_bob).
-simpl. auto. contradiction.
-specialize H with Print.
-destruct (Peano_dec.eq_nat_dec Print Print).
-exact H. 
-assert (Print=Print). auto. contradiction.
-assert (LoveAndPeace=LoveAndPeace). auto. contradiction.
-
-Qed.
-*)
 End A5.
 
 
@@ -1776,28 +1355,6 @@ End Query.
 
 
 
-(*
-
-Parameter even: nat -> Prop.
-Parameter divides: nat -> nat -> Prop.
-
-Theorem th1 : forall (x y: nat),
- (even x) -> (divides x y) -> (even y).
-
-Theorem th2 : forall (x y: nat), divides x (x * y).
-
-Check even.
-
-Check fun (x:nat) => fun (h: even x) => h.
-
-Definition evenn (x:nat) : Prop :=
-  forall (P: nat -> Prop), forall (y:nat), P(2*y)-> P x.
-
-Check evenn.
-
-Theorem th3: forall (x:nat), evenn 2.
-Proof. unfold evenn. intros. apply H.
-*)
 (********* TODO *********)
 Example test_inconsistent: (inconsistent f1 f2) = (6<>7).
 (* Proof. unfold inconsistent. simpl. intuition. *) Admitted.
@@ -1985,108 +1542,8 @@ Definition get_Sq_Env(sq:single_query): environment :=
   end.
 
 
-(*
-Fixpoint get_act_from_policy(p:policy) : act
- let getAct
-    := (fix getAct (policies: nonemptylist policy) : nonemptylist policyId :=
-	  match policies with
-	    | Single p => get_act_from_policy p
-	    | NewList p rest => (get_act_from_policy p) (getIds rest)
-	  end) in
-  match p with
-    | PrimitivePolicy prereq pid action => action
-    | AndPolicy policies =>
-  end.
-*)
 Section ZZZ.
 
-
-
-(*
-Need to add to hypo facts:
-
-act from sq = one of the acts in one of the policies
-asset from sq = asset from agreement
-*)
-
-(*****
-Hypothesis subjectNotInPrin:
-  forall (sq:single_query),
-(~trans_prin (get_Sq_Subject sq)
-	      (get_Prin_From_Agreement ((get_Sq_Agreement sq)))).
-
-
-Fixpoint actInPolicy (ac:act)(p:policy) : Prop :=
-let actInPolicyAux
-    := (fix actInPolicyAux (ac:act)(policies: nonemptylist policy) : Prop :=
-	  match policies with
-	    | Single p => actInPolicy ac p
-	    | NewList p rest => (actInPolicy ac p) \/ (actInPolicyAux ac rest)
-	  end) in
-
-  match p with
-    | PrimitivePolicy prereq pid action => action = ac
-    | AndPolicy policies => actInPolicyAux ac policies
-  end.
-
-Fixpoint actInPolicySet (ac:act)(ps:policySet) : Prop :=
-let trans_ps_list := (fix trans_ps_list (ac:act)(ps_list:nonemptylist policySet){struct ps_list}:=
-		  match ps_list with
-		    | Single ps1 => actInPolicySet ac ps1
-		    | NewList ps ps_list' => (actInPolicySet ac ps) \/ (trans_ps_list ac ps_list')
-		  end) in
-    match ps with
-    | PrimitivePolicySet prq p => actInPolicy ac p
-    | PrimitiveExclusivePolicySet prq p => actInPolicy ac p
-    | AndPolicySet ps_list => trans_ps_list ac ps_list
-  end.
-
-
-
-Fixpoint policyInPolicySet (pol:policy)(ps:policySet) : Prop :=
-let trans_ps_list := (fix trans_ps_list (ps_list:nonemptylist policySet){struct ps_list}:=
-		  match ps_list with
-		    | Single ps1 => policyInPolicySet pol ps1
-		    | NewList ps ps_list' => (policyInPolicySet pol ps) \/ (trans_ps_list ps_list')
-		  end) in
-    match ps with
-    | PrimitivePolicySet prq p => p = pol
-    | PrimitiveExclusivePolicySet prq p => p = pol
-    | AndPolicySet ps_list => trans_ps_list ps_list
-  end.
-
-****)
-
-(*
-
-Lemma ifActMentionedInPSTheActExistsInSomePolicy : 
-forall (ac1:act)(pset : policySet), 
-(actInPolicySet ac1 pset) -> exists (pol:policy), (policyInPolicySet pol pset) /\ (actInPolicy  ac1 pol).
-Proof. intros.
-destruct pset in H.
-exists p0. simpl in H. exact H.
-exists p0. simpl in H. exact H.
-(* unfold actInPolicySet in H. *)
-induction n as [| n'].
-induction x.  
-   exists p0. simpl in H. exact H.
-   exists p0. simpl in H. exact H.
-   exists p0. simpl in H. exact H.
-simpl in H. 
-
-
-
- 
-induction pset.
-  simpl. exists p0. auto.
-  simpl. exists p0. auto.
-  Print policySet.
-  destruct n as [| l' l''].
-  induction n.
-     simpl. induction x.
-  unfold actInPolicySet. 
-auto. Qed.
-*)
 Lemma notTransImpliesUnregulated:
 			       forall (s:subject) (p:prin)(t:Prop), not (trans_prin s p) ->
 				~ (trans_prin s p /\ t).
@@ -2102,11 +1559,6 @@ Theorem queryWithNonReleveantAssetIsUnregulated:
   isPermissionUnregulated (get_Sq_Subject sq) ac (get_Sq_Asset sq)
    (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) ac (get_Sq_Subject sq) (get_Sq_Asset sq)).
 
-(*
-          (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq)) -> 
-                           forall (ac:act),
-                             (Unregulated (get_Sq_Subject sq) ac (get_Sq_Asset sq)).
-*)
 Proof.
 destruct sq as 
   [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
@@ -2146,14 +1598,6 @@ unfold notPermittedResult.
 simpl.
 unfold makeResult.
 apply AnswersNotEqual. intuition. inversion H.
-
-
-
-(*
-simpl in H'; destruct H' as [H1 H2];
-specialize H1 with asset_from_query ac0 sub;
-refine (H1 _); left; exact H.
-*)
 Qed.
 
 
@@ -2163,137 +1607,6 @@ Qed.
 
 
 (*** July 1st, 2015: It should now be possible to proof the one below ****)
-(*
-Theorem queryWithNonReleveantActionIsUnregulated:
-  forall (sq:single_query)(ac:act),
-     ~(is_act_in_policySet ac 
-        (get_PS_From_Agreement 
-            (get_Sq_Agreement sq)))
--> 
-  isPermissionUnregulated (get_Sq_Subject sq) ac (get_Sq_Asset sq)
-   (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) ac (get_Sq_Subject sq) (get_Sq_Asset sq)).
-
-
-Proof.
-destruct sq as 
-  [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
-intros ac. 
-destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
-
-unfold isPermissionUnregulated.
-
-
-destruct ps as [prim_policySet].
-destruct prim_policySet as [proof_of_primInclusivePolicySet | proof_of_primExclusivePolicySet]. 
-destruct proof_of_primInclusivePolicySet as [prq_from_ps pol]. simpl.
-intros H.
-
-destruct (eq_nat_dec asset_from_query asset_from_agreement).
-simpl.
-
-unfold trans_policy_PIPS. 
-destruct (trans_prin_dec subject_from_query prin_from_agreement).
-destruct (trans_preRequisite_dec env_from_query subject_from_query prq_from_ps
-        (getId pol) prin_from_agreement).
-
-
-
-unfold trans_policy_positive.
-
-intros H. simpl in H.
-
-
-specialize H with subject_from_query asset_from_query.
-
-
-destruct (eq_nat_dec asset_from_query asset_from_agreement).
-specialize H with ac subject_from_query.
-destruct (trans_prin_dec subject_from_query prin_from_agreement).
-destruct (trans_preRequisite_dec env_from_query subject_from_query prq_from_ps
-         (getId pol) prin_from_agreement). 
-induction pol as [ppolicies].
-
-induction ppolicies.
-
-destruct x as [prq' pid action_from_policy].
-simpl in H.
-destruct (trans_preRequisite_dec env_from_query subject_from_query prq' 
-         [pid] prin_from_agreement).
-
-destruct (eq_nat_dec ac action_from_policy).
-simpl in H'. contradiction.
-subst; exact H.
-subst; exact H.
-apply IHppolicies.
-simpl. simpl in H'. intuition.
-
-
-
-elim H.
-simpl.
-Hint Resolve Single NewList.
-simple induction 2 in H; auto.
-
-destruct andPol as [primPolicies].
-simpl in H.
-induction primPolicies.
-simpl in H.
-
-
-
-
-
-
-destruct primPol as [prq' pid action_from_policy]. simpl in H.
-subst; exact H.
-
-destruct pol as [primPol].
-destruct primPol as [prq' pid action_from_policy]. simpl in H.
-subst; exact H.
-specialize H with ac.
-exact H.
-intros H' H.
-
-specialize H with subject_from_query asset_from_query.
-
-destruct (eq_nat_dec asset_from_query asset_from_agreement).
-specialize H with ac.
-destruct proof_of_primExclusivePolicySet as [prq_from_ps pol]. simpl.
-specialize H with subject_from_query.
-destruct (trans_prin_dec subject_from_query prin_from_agreement).
-destruct (trans_preRequisite_dec env_from_query subject_from_query prq_from_ps
-         (getId pol) prin_from_agreement).
-destruct pol as [primPol].
-destruct primPol as [prq' pid action_from_policy]. 
-
-destruct (trans_preRequisite_dec env_from_query subject_from_query prq' [pid]
-         prin_from_agreement).
-
-destruct (eq_nat_dec ac action_from_policy).
-simpl in H'. contradiction.
-subst; exact H.
-subst; exact H.
-
-destruct pol as [primPol].
-destruct primPol as [prq' pid action_from_policy]. simpl in H.
-subst; exact H.
-
-destruct pol as [primPol].
-destruct primPol as [prq' pid action_from_policy]. simpl in H.
-specialize H with ac.
-simpl in H'.
-destruct (Peano_dec.eq_nat_dec ac action_from_policy). contradiction.
-subst; exact H.
-
-specialize H with ac.
-exact H.
-*)
-(*
-intros H H'; simpl in H'; destruct H' as [H1 H2];
-unfold is_act_in_policySet in H;
-specialize H1 with asset_from_query ac subjet_from_query;
-refine (H1 _); right; exact H.
-*)
 
 
 Section preRequisiteFromPS.
@@ -2396,12 +1709,6 @@ Definition get_preRequisite_From_policySet (ps:policySet):
 
   match ps with
     | PPS pps => get_preRequisite_From_primPolicySet pps 
-    (*               
-    | APS aps => match aps with 
-                 | AndPolicySet ppolicysets => 
-                     get_preRequisite_From_primPolicySets ppolicysets
-               end
-    *)
   end.
 
 Definition get_policy_preRequisite_From_primPolicySet (pps:primPolicySet) : 
@@ -2425,12 +1732,6 @@ Definition get_policy_preRequisite_From_policySet (ps:policySet):
 
   match ps with
     | PPS pps => get_policy_preRequisite_From_primPolicySet pps 
-(*               
-    | APS aps => match aps with 
-                 | AndPolicySet ppolicysets => 
-                     get_policy_preRequisite_From_primPolicySets ppolicysets
-               end
-*)
   end.
 
 
@@ -2460,12 +1761,6 @@ Fixpoint get_IDs_From_primPolicySets
 Definition get_IDs_From_policySet (ps:policySet) : nonemptylist policyId :=
   match ps with
     | PPS pps => get_IDs_From_primPolicySet pps 
-(*               
-    | APS aps => match aps with 
-                 | AndPolicySet ppolicysets => 
-                     get_IDs_From_primPolicySets ppolicysets
-               end
-*)
   end.
     
 Definition get_policy_From_primPolicySet (pps:primPolicySet) : 
@@ -2486,120 +1781,10 @@ Definition get_policy_From_policySet (ps:policySet): policy :=
 
   match ps with
     | PPS pps => get_policy_From_primPolicySet pps 
-(*               
-    | APS aps => match aps with 
-                 | AndPolicySet ppolicysets => 
-                     get_policy_preRequisite_From_primPolicySets ppolicysets
-               end
-*)
   end.
 
 End preRequisiteFromPS.
 
-(*
-Theorem trans_policy_positive_implies_PermOrUnregulated:
-  forall (sq:single_query)(pol: policy),
-
-if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
-          (get_preRequisite_From_policy pol)
-          (get_ID_From_policy pol)
-          (get_Prin_From_Agreement (get_Sq_Agreement sq)))
-    then (*  *)
-      ((trans_policy_positive (get_Sq_Env sq) (get_Sq_Subject sq) pol
-          (get_Prin_From_Agreement (get_Sq_Agreement sq))
-          (get_Asset_From_Agreement (get_Sq_Agreement sq))) ->
-       (Permitted (get_Sq_Subject sq) (get_act_From_policy pol) 
-          (get_Asset_From_Agreement (get_Sq_Agreement sq))))
-    else (*  *)
-      ((trans_policy_positive (get_Sq_Env sq) (get_Sq_Subject sq) pol
-          (get_Prin_From_Agreement (get_Sq_Agreement sq))
-          (get_Asset_From_Agreement (get_Sq_Agreement sq))) ->
-       (Unregulated (get_Sq_Subject sq) (get_act_From_policy pol)
-          (get_Asset_From_Agreement (get_Sq_Agreement sq)))).
-
-Proof.
-intros sq pol.
-destruct sq as 
- [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
-destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
-induction pol as [aPrimPolicy]. induction aPrimPolicy as [prq pid ac]. simpl.
-destruct (trans_preRequisite_dec env_from_query subject_from_query
-     prq (Single pid)
-     prin_from_agreement). 
-intros H. destruct H as [H1 H2]. 
-pose (proof_of_Permitted := H1 t).
-
-exact proof_of_Permitted.
-
-intros H. destruct H as [H1 H2]. 
-pose (proof_of_Unregulated := H2 n).
-exact proof_of_Unregulated.
-
-Qed.
-*)
-(*
-Theorem trans_policy_unregulated_implies_Unregulated:
-  forall (sq:single_query)(pol: policy),
-
-(trans_policy_unregulated (get_Sq_Env sq) (get_Sq_Subject sq) pol
-          (get_Prin_From_Agreement (get_Sq_Agreement sq))
-          (get_Asset_From_Agreement (get_Sq_Agreement sq))) ->
-       (Unregulated (get_Sq_Subject sq) (get_act_From_policy pol)
-          (get_Asset_From_Agreement (get_Sq_Agreement sq))).
-
-Proof.
-intros sq pol.
-destruct sq as 
- [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
-destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
-induction pol as [aPrimPolicy]. induction aPrimPolicy as [prq pid ac]. simpl.
-auto. Qed.
-
-Theorem trans_policy_negative_implies_NotPermitted:
-  forall (sq:single_query)(pol: policy),
-
-(trans_policy_negative (get_Sq_Env sq) (get_Sq_Subject sq) pol
-          (get_Asset_From_Agreement (get_Sq_Agreement sq))) ->
-       not (Permitted (get_Sq_Subject sq) (get_act_From_policy pol)
-             (get_Asset_From_Agreement (get_Sq_Agreement sq))).
-
-Proof.
-intros sq pol.
-destruct sq as 
- [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
-destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
-induction pol as [aPrimPolicy]. induction aPrimPolicy as [prq pid ac]. simpl.
-auto. Qed.
-*)
-
-(*
-Definition PermittedOrNotPermittedOrUnregulated (sq:single_query) :=
-  ((Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq)) \/
-   (Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq)) \/
-  ~(Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))).
-
-Definition trans_agr_implies_Unregulated (agr:agreement)
-  (env_from_query:environment)
-  (subject_from_query:subject)(action_from_query:act)
-  (asset_from_query:asset)  := 
- (trans_agreement env_from_query agr -> 
-   (Unregulated subject_from_query action_from_query asset_from_query)).
-
-Definition trans_agr_implies_Permitted (agr:agreement)
-  (env_from_query:environment)
-  (subject_from_query:subject)(action_from_query:act)
-  (asset_from_query:asset)  := 
- (trans_agreement env_from_query agr -> 
-   (Permitted subject_from_query action_from_query asset_from_query)).
-
-Definition trans_agr_implies_NotPermitted (agr:agreement)
-  (env_from_query:environment)
-  (subject_from_query:subject)(action_from_query:act)
-  (asset_from_query:asset)  :=  
- (trans_agreement env_from_query agr ->  
-   (~Permitted subject_from_query action_from_query asset_from_query)).
-
-*)
 
 (****
 If [P n] is some proposition involving a natural number n, and
@@ -3967,194 +3152,5 @@ simpl. unfold makeResult. auto.
 simpl. unfold makeResult. auto.
 Defined.
 
-
-(*
-
-
-
-Theorem CCCCC :
-    forall (sq:single_query)(pp:primPolicy),
-    (is_primPolicy_in_policySet pp (get_PS_From_Agreement (get_Sq_Agreement sq))) ->
-
-  if (eq_nat_dec (get_Sq_Asset sq) (get_Asset_From_Agreement (get_Sq_Agreement sq)))
-  then
-    if (trans_prin_dec (get_Sq_Subject sq) (get_Prin_From_Agreement (get_Sq_Agreement sq)))
-    then (* prin *)
-      if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq) 
-            (get_preRequisite_From_policySet 
-               (get_PS_From_Agreement (get_Sq_Agreement sq))) 
-            (getId (Policy (Single pp))) 
-            (get_Prin_From_Agreement (get_Sq_Agreement sq)))
-      then (* prin /\ prq *)
-        if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
-          (get_preRequisite_From_primPolicy pp)
-          (Single (get_ID_From_primPolicy pp))
-          (get_Prin_From_Agreement (get_Sq_Agreement sq)))
-        then (* prin /\ prq /\ prq' *)
-          if (eq_nat_dec (get_Sq_Action sq) (get_Action_From_primPolicy pp))
-          then (* prin /\ prq /\ prq' /\ action *)
-            (isResultInQueryResult 
-                (Result Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-                (trans_agreement            
-                   (get_Sq_Env sq) (get_Sq_Agreement sq) 
-                   (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
-          else (* prin /\ prq /\ prq' /\ ~action *)
-            (isResultInQueryResult 
-               (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-               (trans_agreement            
-                   (get_Sq_Env sq) (get_Sq_Agreement sq) 
-                   (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
-         else (* prin /\ prq /\ ~prq' *)
-           (isResultInQueryResult 
-              (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-              (trans_agreement            
-                   (get_Sq_Env sq) (get_Sq_Agreement sq) 
-                   (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
-      else (* prin /\ ~prq *)
-        (isResultInQueryResult 
-           (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-           (trans_agreement            
-                   (get_Sq_Env sq) (get_Sq_Agreement sq) 
-                   (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
-    else (* ~prin *)
-      match (get_PS_From_Agreement (get_Sq_Agreement sq)) with
-        | PPS pps => 
-            match pps with 
-              | PIPS pips => 
-                  (isResultInQueryResult 
-                    (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-                    (trans_agreement            
-                      (get_Sq_Env sq) (get_Sq_Agreement sq) 
-                      (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
-              | PEPS peps => 
-                  if (eq_nat_dec (get_Sq_Action sq) (get_Action_From_primPolicy pp))
-                  then
-                    (isResultInQueryResult 
-                       (Result NotPermitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-                       (trans_agreement            
-                          (get_Sq_Env sq) (get_Sq_Agreement sq) 
-                          (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
-                  else
-                    (isResultInQueryResult 
-                       (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-                       (trans_agreement            
-                          (get_Sq_Env sq) (get_Sq_Agreement sq) 
-                          (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
-            end
-      end
-   else
-     (isResultInQueryResult 
-        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-        (trans_agreement            
-           (get_Sq_Env sq) (get_Sq_Agreement sq) 
-           (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq))).
-Proof.
-destruct sq as [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
-
-destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
-intros pp H. simpl.
-destruct pp as [prq' pid action_from_policy]. simpl.
-destruct (trans_prin_dec subject_from_query prin_from_agreement).
-destruct (trans_preRequisite_dec env_from_query subject_from_query
-     (get_preRequisite_From_policySet ps) [pid] prin_from_agreement).
-unfold trans_policy_PIPS. simpl. simpl in H.
-destruct ps as [prim_policySet]. simpl.
-
-
-Theorem PermNotOrUnregulated:
-  forall (sq:single_query),
-if (act_in_agreement_dec (get_Sq_Action sq) (get_Sq_Agreement sq))
-then
- if (eq_nat_dec (get_Sq_Asset sq) (get_Asset_From_Agreement (get_Sq_Agreement sq)))
- then
-  if (trans_prin_dec (get_Sq_Subject sq)
-		    (get_Prin_From_Agreement ((get_Sq_Agreement sq))))
-  then (* prin *)
-   if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
-          (get_preRequisite_From_policySet 
-             (get_PS_From_Agreement (get_Sq_Agreement sq)))
-          (get_IDs_From_policySet 
-             (get_PS_From_Agreement (get_Sq_Agreement sq)))
-          (get_Prin_From_Agreement (get_Sq_Agreement sq)))
-   then (* prin /\ prq *)
-    if (trans_preRequisite_dec (get_Sq_Env sq) (get_Sq_Subject sq)
-          (get_policy_preRequisite_From_policySet
-             (get_PS_From_Agreement (get_Sq_Agreement sq)))
-          (get_IDs_From_policySet 
-             (get_PS_From_Agreement (get_Sq_Agreement sq)))
-          (get_Prin_From_Agreement (get_Sq_Agreement sq)))
-    then (* prin /\ prq /\ prq' *)
-      (isResultInQueryResult 
-        (Result Permitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
-            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
-    else (* prin /\ prq /\ ~prq' *)
-      (isResultInQueryResult 
-        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
-            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
-   else (* prin /\ ~prq *)
-     (isResultInQueryResult 
-        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
-            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
-  else (* ~prin *)
-    (isResultInQueryResult 
-        (Result NotPermitted (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
-            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq))) \/
-
-    (isResultInQueryResult 
-        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
-            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
- else (* asset from query is not the same as the asset from the agreement *)
-    (isResultInQueryResult 
-        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
-            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq)))
-else (* the action from query is not in the agreement *)
-   (isResultInQueryResult 
-        (Result Unregulated (get_Sq_Subject sq) (get_Sq_Action sq) (get_Sq_Asset sq))
-        (trans_agreement (get_Sq_Env sq) (get_Sq_Agreement sq) 
-            (get_Sq_Action sq) (get_Sq_Subject sq) (get_Sq_Asset sq))).
-
-Proof.
-destruct sq as [agr subject_from_query action_from_query asset_from_query env_from_query]. simpl.
-destruct (act_in_agreement_dec action_from_query agr).
-destruct agr as [prin_from_agreement asset_from_agreement ps]. simpl.
-destruct (eq_nat_dec asset_from_query asset_from_agreement). simpl.
-destruct (trans_prin_dec subject_from_query prin_from_agreement). simpl. 
-destruct ps as [prim_policySet]. simpl.
-destruct (trans_preRequisite_dec env_from_query subject_from_query
-     (get_preRequisite_From_primPolicySet prim_policySet)
-     (get_IDs_From_primPolicySet prim_policySet) prin_from_agreement). simpl.
-destruct (trans_preRequisite_dec env_from_query subject_from_query
-     (get_policy_preRequisite_From_primPolicySet prim_policySet)
-     (get_IDs_From_primPolicySet prim_policySet) prin_from_agreement).
-destruct (trans_preRequisite_dec env_from_query subject_from_query
-     (get_policy_preRequisite_From_policySet ps) (get_IDs_From_policySet ps)
-     prin_from_agreement).
-
-destruct (eq_nat_dec asset_from_query asset_from_agreement). simpl. 
-destruct prim_policySet as [proof_of_primInclusivePolicySet | proof_of_primExclusivePolicySet]. 
-destruct proof_of_primInclusivePolicySet as [prq_from_ps pol].
-unfold trans_policy_PIPS.
-destruct (trans_prin_dec subject_from_query prin_from_agreement).
-destruct (trans_preRequisite_dec env_from_query subject_from_query prq_from_ps
-        (getId pol) prin_from_agreement). 
-unfold trans_policy_positive.
-destruct pol as [primPolicies]. 
-induction primPolicies as [pp | pp' rest_pp]. simpl. 
-destruct pp as [prq' pid action_from_policy]. simpl.
-destruct (trans_preRequisite_dec env_from_query subject_from_query prq' [pid]
-        prin_from_agreement).
-destruct (eq_nat_dec action_from_query action_from_policy). simpl.
-unfold makeResult. subst. auto.
-simpl. simpl in i. contradiction.
-simpl. simpl in t1. contradiction.
-simpl. simpl in IHrest_pp.
-
-*)
 
 End ODRL.
