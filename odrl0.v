@@ -891,15 +891,12 @@ Definition process_single_pp_trans_policy_positive
           then
             (Single 
               (makeResult Permitted x action_from_query a))
-            (*(Permitted x action_from_query a)*)
           else
             (Single 
               (makeResult Unregulated x action_from_query a))
-            (*(Unregulated x action_from_query a)*)
         else (* prin /\ prq /\ ~prq' *)
           (Single 
               (makeResult Unregulated x action_from_query a))
-          (*(Unregulated x action_from_query a)*)
   end.
 
 Fixpoint trans_pp_list_trans_policy_positive 
