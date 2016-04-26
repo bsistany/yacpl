@@ -2846,7 +2846,6 @@ Theorem trans_agreement_dec2:
   (e:environment)(ag:agreement)(action_from_query:act)
    (subject_from_query:subject)(asset_from_query:asset),
 
-
  (isResultInQueryResult 
     (Result Permitted subject_from_query action_from_query asset_from_query)
     (trans_agreement e ag action_from_query subject_from_query asset_from_query)) 
