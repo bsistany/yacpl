@@ -278,28 +278,6 @@ Definition is_asset_in_agreement (a: asset)(agr: agreement) : Prop :=
     | Agreement pr ass ps => ass = a
   end.
 
-(* Example 2.1 *)
-
-
-Definition p1A1:primPolicySet :=
-  PIPS (PrimitiveInclusivePolicySet
-    TruePrq
-    (Policy (Single (PrimitivePolicy (Constraint (Count  5)) id1 Print)))).
-
-
-
-Definition p2A1prq1:preRequisite := (Constraint (Principal (Single Alice))).
-Definition p2A1prq2:preRequisite := (Constraint (Count 2)).
-Definition p2A1:primPolicySet :=
-  PIPS (PrimitiveInclusivePolicySet
-    TruePrq
-    (Policy 
-      (Single 
-        (PrimitivePolicy (AndPrqs (NewList p2A1prq1 (Single p2A1prq2))) id2 Print)))).
-
-Definition A2_1_ps1 := Agreement (NewList Alice (Single Bob)) TheReport (PPS p1A1).
-		
-Definition A2_1_ps2 := Agreement (NewList Alice (Single Bob)) TheReport (PPS p2A1).
 
 (* Example 2.5 *)
 
@@ -1024,28 +1002,56 @@ Definition get_PS_From_Agreement(agr:agreement): policySet :=
 
 
 
-(** Evaling Example 2.1 **)
-Definition e_2_1 : environment :=
+(** Example 2.1 **)
+
+Definition ps_21_p1:primPolicy := 
+  (PrimitivePolicy (Constraint (Count  5)) id1 Print).
+
+
+
+Definition ps_21_p2prq1:preRequisite := (Constraint (Principal (Single Alice))).
+Definition ps_21_p2prq2:preRequisite := (Constraint (Count 2)).
+Definition ps_21_prq:preRequisite := 
+  (AndPrqs (NewList ps_21_p2prq1 (Single ps_21_p2prq2))).
+
+Definition ps_21_p2:primPolicy := 
+  (PrimitivePolicy ps_21_prq id2 Print).
+
+Definition ps_21_p:policy := 
+  (Policy (NewList ps_21_p1 (Single ps_21_p2))).
+
+Definition ps_21:primPolicySet :=
+  PIPS (PrimitiveInclusivePolicySet
+    TruePrq ps_21_p).
+
+Definition A21 := Agreement (NewList Alice (Single Bob)) TheReport (PPS ps_21).
+		
+
+Definition e_21_2 : environment :=
  (ConsEnv (make_count_equality Bob id1 0)
    (ConsEnv (make_count_equality Bob id2 0)
      (ConsEnv (make_count_equality Alice id1 0)
        (SingleEnv (make_count_equality Alice id1 0))))).
 
-Definition e_2_2 : environment :=
+Definition e_21_1 : environment :=
  (SingleEnv (make_count_equality Alice id1 0)).
 
+(* 
 
-
-Eval compute in (trans_policy_PIPS e_2_2 TruePrq
- (Policy (Single (PrimitivePolicy (Constraint (Count  5)) id1 Print))) 
- Alice
+Eval compute in (trans_policy_PIPS e_21_1 TruePrq ps_21_p 
+  Alice
  (NewList Alice (Single Bob)) TheReport Print).
 
-Eval compute in (trans_ps e_2_2 Print Alice ebook (PPS p1A1) (NewList Alice (Single Bob)) TheReport).
+ 
+Eval compute in (trans_ps e_21_1 Print Alice TheReport 
+ (PPS ps_21) 
+ (NewList Alice (Single Bob)) 
+  TheReport).
+*)
+Eval compute in (trans_agreement e_21_1 A21 Print Alice TheReport).
 
-Eval compute in (trans_agreement e_2_1 A2_1_ps1 Print Alice ebook).
 
-Eval compute in (trans_agreement e_2_1 A2_1_ps2 Print Alice ebook).
+
 
 
 (***** 3.1 *****)
