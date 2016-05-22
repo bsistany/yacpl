@@ -182,7 +182,19 @@ Inductive constraint : Set :=
   | Count : nat -> constraint
   | CountByPrin : prin -> nat -> constraint.
 
-(* taking out Condition, replacing with NotCons *)
+Inductive primPreRequisite : Set :=
+  | TruePrq : primPreRequisite
+  | Constraint : constraint -> primPreRequisite
+  | NotCons : constraint -> primPreRequisite.
+ 
+Inductive preRequisite : Set :=
+  | PreRequisite : nonemptylist primPreRequisite -> preRequisite.
+
+Definition makePreRequisite (prq:primPreRequisite) : preRequisite :=
+ (PreRequisite (Single prq)).
+
+
+(*
 Inductive preRequisite : Set :=
   | TruePrq : preRequisite
   | Constraint : constraint -> preRequisite
@@ -190,6 +202,7 @@ Inductive preRequisite : Set :=
   | AndPrqs : nonemptylist preRequisite -> preRequisite
   | OrPrqs : nonemptylist preRequisite -> preRequisite
   | XorPrqs : nonemptylist preRequisite -> preRequisite.
+*)
 
 (*** Changing the policy and policySets definintion: July 1st, 2015 ***)
 Inductive primPolicy : Set :=
@@ -281,7 +294,7 @@ Definition is_asset_in_agreement (a: asset)(agr: agreement) : Prop :=
 
 (* Example 2.5 *)
 
-Definition tenCount:preRequisite := (Constraint (Count 10)).
+Definition tenCount:preRequisite := (PreRequisite (Single (Constraint (Count 10)))).
 Definition fiveCount:constraint := (Count 5).
 Definition oneCount:constraint := (Count 1).
 
@@ -293,10 +306,11 @@ Definition prins2_5 := (NewList Alice (Single Bob)).
 (*** 2.6 ***)
 Definition prins2_6 := prins2_5.
 
-Definition aliceCount10:preRequisite := Constraint (CountByPrin (Single Alice) 10).
+Definition aliceCount10:preRequisite := 
+ (PreRequisite (Single (Constraint (CountByPrin (Single Alice) 10)))).
 Definition primPolicy2_6:policy := Policy (Single (PrimitivePolicy aliceCount10 id3 Play)).
 Definition policySet2_6_modified:= 
-  PPS (PEPS (PrimitiveExclusivePolicySet TruePrq primPolicy2_6)).
+  PPS (PEPS (PrimitiveExclusivePolicySet (makePreRequisite TruePrq) primPolicy2_6)).
 
 
 (****** Environments ******)
@@ -618,16 +632,35 @@ Definition trans_notCons
   (e:environment)(x:subject)(const:constraint)(IDs:nonemptylist policyId)(prin_u:prin) : Prop :=
   ~ (trans_constraint e x const IDs prin_u).
 
+Definition trans_primPreRequisite
+  (e:environment)(x:subject)(prq:primPreRequisite)(IDs:nonemptylist policyId)
+  (prin_u:prin) : Prop :=
+   match prq with
+    | TruePrq => True
+    | Constraint const => trans_constraint e x const IDs prin_u
+    | NotCons const => trans_notCons e x const IDs prin_u
+   end.
+
+Fixpoint trans_andPrqs
+    (e:environment)(x:subject)
+    (prqs:nonemptylist primPreRequisite)
+    (IDs:nonemptylist policyId)(prin_u:prin) {struct prqs}: Prop :=
+   
+   match prqs with
+     | Single prq => trans_primPreRequisite e x prq IDs prin_u 
+     | NewList prq' rest_prqs => 
+         (trans_primPreRequisite e x prq' IDs prin_u) /\
+         (trans_andPrqs e x rest_prqs IDs prin_u)
+
+   end.
+
+
+
 Definition trans_preRequisite
   (e:environment)(x:subject)(prq:preRequisite)(IDs:nonemptylist policyId)(prin_u:prin) : Prop :=
 
   match prq with
-    | TruePrq => True
-    | Constraint const => trans_constraint e x const IDs prin_u
-    | NotCons const => trans_notCons e x const IDs prin_u
-    | AndPrqs prqs => True (*trans_andPrqs x prq IDs prin_u a*)
-    | OrPrqs prqs => True (*trans_orPrqs x prq IDs prin_u a*)
-    | XorPrqs prqs => True (*trans_xorPrqs x prq IDs prin_u a*)
+    | PreRequisite prqs => trans_andPrqs e x prqs IDs prin_u
   end.
 
 Definition process_single_pp_trans_policy_unregulated
@@ -760,6 +793,10 @@ intros e x const IDs prin_u.
 pose (j:= trans_constraint_dec e x const IDs prin_u). 
 destruct j. apply double_neg_constraint in t. right. exact t. left. exact n. Defined.
 
+
+
+
+
 Theorem trans_notCons_dec :
 forall (e:environment)(x:subject)
 (const:constraint)(IDs:nonemptylist policyId)(prin_u:prin),
@@ -768,7 +805,52 @@ forall (e:environment)(x:subject)
 Proof.
 intros e x const IDs prin_u. 
 unfold trans_notCons. apply trans_negation_constraint_dec. Defined.
-  
+
+Theorem trans_primPreRequisite_dec :
+  forall (e:environment)(x:subject)
+    (prq:primPreRequisite)(IDs:nonemptylist policyId)(prin_u:prin),
+       {trans_preRequisite e x (makePreRequisite prq) IDs prin_u} +
+       {~ trans_preRequisite e x (makePreRequisite prq) IDs prin_u}.
+Proof.
+simpl.
+destruct prq as [theTruePrq | theConst | theNotConst].  
+simpl. auto.
+simpl. apply trans_constraint_dec.
+simpl. apply trans_notCons_dec.
+Defined.
+
+Check nonemptylist_ind.
+
+Theorem trans_prq_list_idetity:
+  forall (e:environment)(x:subject)(prq' : primPreRequisite)
+    (rest_prqs : nonemptylist primPreRequisite)
+    (IDs:nonemptylist policyId)(prin_u:prin),
+ (trans_andPrqs e x (prq', rest_prqs) IDs prin_u) =
+ ((trans_primPreRequisite e x prq' IDs prin_u) /\
+  (trans_andPrqs e x rest_prqs IDs prin_u)).
+Proof.
+intros. simpl. auto. Defined.
+
+
+Theorem trans_prq_restprq_implies_all:
+  forall (e:environment)(x:subject)(prq' : primPreRequisite)
+    (rest_prqs : nonemptylist primPreRequisite)
+    (IDs:nonemptylist policyId)(prin_u:prin),
+
+      ({trans_andPrqs e x rest_prqs IDs prin_u} +
+      {~ trans_andPrqs e x rest_prqs IDs prin_u}) ->
+ 
+   ({trans_andPrqs e x (prq', rest_prqs) IDs prin_u} +
+   {~ trans_andPrqs e x (prq', rest_prqs) IDs prin_u}).
+Proof. 
+intros.
+specialize trans_primPreRequisite_dec with e x prq' IDs prin_u.
+intros. simpl in H0.
+specialize trans_prq_list_idetity with e x prq' rest_prqs IDs prin_u.
+intros.
+rewrite -> H1.
+tauto.
+Defined.
 
 Theorem trans_preRequisite_dec :
   forall (e:environment)(x:subject)
@@ -776,15 +858,14 @@ Theorem trans_preRequisite_dec :
        {trans_preRequisite e x prq IDs prin_u} +
        {~ trans_preRequisite e x prq IDs prin_u}.
 Proof.
-intros e x prq IDs prin_u.
-induction prq as [theTruePrq | theConst | theNotConst| 
-                  theAndPrqs | theOrPrqs | theXorPrqs].
-simpl. auto.
-simpl. apply trans_constraint_dec.
-simpl. apply trans_notCons_dec.
-simpl. auto.
-simpl. auto.
-simpl. auto.
+
+intros.
+induction prq as [primPrqs].
+induction primPrqs as [prq | prq' rest_prqs].
+apply trans_primPreRequisite_dec.
+simpl.
+apply trans_prq_restprq_implies_all.
+simpl in IHrest_prqs. assumption.
 Defined. 
 
 Theorem act_in_primPolicy_dec :
@@ -1005,14 +1086,16 @@ Definition get_PS_From_Agreement(agr:agreement): policySet :=
 (** Example 2.1 **)
 
 Definition ps_21_p1:primPolicy := 
-  (PrimitivePolicy (Constraint (Count  5)) id1 Print).
+  (PrimitivePolicy (makePreRequisite (Constraint (Count  5))) id1 Print).
 
 
 
-Definition ps_21_p2prq1:preRequisite := (Constraint (Principal (Single Alice))).
-Definition ps_21_p2prq2:preRequisite := (Constraint (Count 2)).
+Definition ps_21_p2prq1:primPreRequisite := 
+  (Constraint (Principal (Single Alice))).
+Definition ps_21_p2prq2:primPreRequisite := 
+  (Constraint (Count 2)).
 Definition ps_21_prq:preRequisite := 
-  (AndPrqs (NewList ps_21_p2prq1 (Single ps_21_p2prq2))).
+  (PreRequisite (NewList ps_21_p2prq1 (Single ps_21_p2prq2))).
 
 Definition ps_21_p2:primPolicy := 
   (PrimitivePolicy ps_21_prq id2 Print).
@@ -1022,19 +1105,16 @@ Definition ps_21_p:policy :=
 
 Definition ps_21:primPolicySet :=
   PIPS (PrimitiveInclusivePolicySet
-    TruePrq ps_21_p).
+    (makePreRequisite TruePrq) ps_21_p).
 
 Definition A21 := Agreement (NewList Alice (Single Bob)) TheReport (PPS ps_21).
 		
 
-Definition e_21_2 : environment :=
+Definition e_21_1 : environment :=
  (ConsEnv (make_count_equality Bob id1 0)
    (ConsEnv (make_count_equality Bob id2 0)
      (ConsEnv (make_count_equality Alice id1 0)
-       (SingleEnv (make_count_equality Alice id1 0))))).
-
-Definition e_21_1 : environment :=
- (SingleEnv (make_count_equality Alice id1 0)).
+       (SingleEnv (make_count_equality Alice id2 0))))).
 
 (* 
 
@@ -1050,8 +1130,14 @@ Eval compute in (trans_ps e_21_1 Print Alice TheReport
 *)
 Eval compute in (trans_agreement e_21_1 A21 Print Alice TheReport).
 
+Definition e_21_2 : environment :=
+ (ConsEnv (make_count_equality Bob id1 0)
+   (ConsEnv (make_count_equality Bob id2 0)
+     (ConsEnv (make_count_equality Alice id1 10)
+       (SingleEnv (make_count_equality Alice id2 10))))).
 
 
+Eval compute in (trans_agreement e_21_2 A21 Print Alice TheReport).
 
 
 (***** 3.1 *****)
@@ -1063,8 +1149,9 @@ Section A1.
 
 Definition psA1:policySet :=
   PPS (PIPS (PrimitiveInclusivePolicySet
-             TruePrq
-            (Policy (Single (PrimitivePolicy (Constraint (Count  5)) id1 Print))))).
+             (makePreRequisite TruePrq)
+            (Policy (Single (PrimitivePolicy 
+                      (makePreRequisite (Constraint (Count  5))) id1 Print))))).
 
 Definition AgreeCan := Agreement (Single Alice) TheReport psA1.
 Definition eA1 : environment :=
@@ -1146,16 +1233,16 @@ End A1.
 Section Example4_3.
 
 Definition ps_alice:policySet := 
-  PPS (PIPS (PrimitiveInclusivePolicySet TruePrq 
-   (Policy (Single (PrimitivePolicy TruePrq id1 Print))))).
+  PPS (PIPS (PrimitiveInclusivePolicySet (makePreRequisite TruePrq) 
+   (Policy (Single (PrimitivePolicy (makePreRequisite TruePrq) id1 Print))))).
 
 Definition agr := Agreement (Single Alice) TheReport ps_alice.
 Definition e_agr : environment := (SingleEnv (make_count_equality NullSubject NullId 0)).
 Eval compute in (trans_agreement e_agr agr).
 
 Definition ps_bob:policySet := 
-   PPS (PEPS (PrimitiveExclusivePolicySet TruePrq 
-   (Policy (Single (PrimitivePolicy TruePrq id2 Print))))).
+   PPS (PEPS (PrimitiveExclusivePolicySet (makePreRequisite TruePrq) 
+   (Policy (Single (PrimitivePolicy (makePreRequisite TruePrq) id2 Print))))).
 Definition agr' := Agreement (Single Bob) TheReport ps_bob.
 Definition e_agr' : environment := (SingleEnv (make_count_equality NullSubject NullId 0)).
 Eval compute in (trans_agreement e_agr' agr').
@@ -1173,8 +1260,9 @@ Definition eA2 : environment :=
 
 Definition psA2:policySet :=
   PPS (PIPS (PrimitiveInclusivePolicySet
-             TruePrq
-            (Policy (Single (PrimitivePolicy (Constraint (Count  5)) id1 Print))))).
+             (makePreRequisite TruePrq)
+            (Policy (Single (PrimitivePolicy 
+              (makePreRequisite (Constraint (Count  5))) id1 Print))))).
 
 Definition AgreeA2 := Agreement (Single Alice) TheReport psA2.
 
@@ -1283,15 +1371,16 @@ End A3.
 Section A5.
 
 Definition prin_bob := (Single Bob). 
-Definition single_pol:policy := Policy (Single (PrimitivePolicy TruePrq id3 Print)).
+Definition single_pol:policy := 
+  Policy (Single (PrimitivePolicy (makePreRequisite TruePrq) id3 Print)).
 Definition two_pols:policy := Policy 
-  (NewList (PrimitivePolicy TruePrq id1 Display)
-     (Single (PrimitivePolicy TruePrq id3 Print))).
+  (NewList (PrimitivePolicy (makePreRequisite TruePrq) id1 Display)
+     (Single (PrimitivePolicy (makePreRequisite TruePrq) id3 Print))).
 
 Definition single_pol_set:policySet := 
-  PPS (PEPS (PrimitiveExclusivePolicySet TruePrq single_pol)).
+  PPS (PEPS (PrimitiveExclusivePolicySet (makePreRequisite TruePrq) single_pol)).
 Definition two_pol_set:policySet := 
-  PPS (PEPS (PrimitiveExclusivePolicySet TruePrq two_pols)).
+  PPS (PEPS (PrimitiveExclusivePolicySet (makePreRequisite TruePrq) two_pols)).
 
 Definition AgreeA5_single := Agreement prin_bob LoveAndPeace single_pol_set.
 Definition AgreeA5_two := Agreement prin_bob LoveAndPeace two_pol_set.
@@ -1318,10 +1407,11 @@ unfold permittedResult.
 simpl.
 unfold trans_policy_PEPS.
 destruct (trans_prin_dec x prin_bob).
-destruct (trans_preRequisite_dec eA5 x TruePrq (getId two_pols) prin_bob).
+destruct (trans_preRequisite_dec eA5 x (makePreRequisite TruePrq) 
+           (getId two_pols) prin_bob).
 simpl.
-destruct (trans_preRequisite_dec eA5 x TruePrq [id1] prin_bob).
-destruct (trans_preRequisite_dec eA5 x TruePrq [id3] prin_bob).
+destruct (trans_preRequisite_dec eA5 x (makePreRequisite TruePrq) [id1] prin_bob).
+destruct (trans_preRequisite_dec eA5 x (makePreRequisite TruePrq) [id3] prin_bob).
 simpl.
 unfold makeResult.
 intuition.
@@ -1339,7 +1429,7 @@ unfold notPermittedResult.
 simpl.
 unfold trans_policy_PEPS.
 destruct (trans_prin_dec x prin_bob).
-destruct (trans_preRequisite_dec eA5 x TruePrq (getId two_pols) prin_bob).
+destruct (trans_preRequisite_dec eA5 x (makePreRequisite TruePrq) (getId two_pols) prin_bob).
 simpl in t. contradiction.
 simpl in n. intuition.
 simpl. unfold makeResult.
@@ -1651,18 +1741,18 @@ Definition get_preRequisite_From_primPolicy (p:primPolicy) :
     | PrimitivePolicy prq pid action => prq
   end.
 
-
+(*
 Fixpoint get_preRequisite_From_primPolicies 
   (l:nonemptylist primPolicy){struct l}  : preRequisite :=
   
          match l with
            | Single pp => get_preRequisite_From_primPolicy pp
 	   | NewList pp rest => 
-               AndPrqs (app_nonempty
+               (app_nonempty
                          (Single (get_preRequisite_From_primPolicy pp)) 
                          (Single (get_preRequisite_From_primPolicies rest)))
          end.
-  
+
 Definition get_preRequisite_From_policy (p:policy): preRequisite :=
 
   match p with
@@ -1670,7 +1760,7 @@ Definition get_preRequisite_From_policy (p:policy): preRequisite :=
     | Policy ppolicies => 
         get_preRequisite_From_primPolicies ppolicies
   end.
-
+*)
 Definition get_ID_From_policy (p:policy): nonemptylist policyId :=
 
 let process_single_pp := 
@@ -1726,7 +1816,7 @@ Definition get_preRequisite_From_primPolicySet (pps:primPolicySet) :
           | PrimitiveExclusivePolicySet prq pol => prq
         end
   end.
-
+(*
 Fixpoint get_preRequisite_From_primPolicySets 
  (l:nonemptylist primPolicySet){struct l}  : preRequisite :=
   
@@ -1816,7 +1906,7 @@ Definition get_policy_From_policySet (ps:policySet): policy :=
   match ps with
     | PPS pps => get_policy_From_primPolicySet pps 
   end.
-
+*)
 End preRequisiteFromPS.
 
 
@@ -2784,11 +2874,14 @@ Proof.
 apply Granted. simpl.
 unfold trans_policy_PIPS.
 destruct (trans_prin_dec Alice [Alice]).
-destruct (trans_preRequisite_dec eA1 Alice TruePrq
-        (getId (Policy [PrimitivePolicy (Constraint (Count 5)) id1 Print]))
+destruct (trans_preRequisite_dec eA1 Alice (makePreRequisite TruePrq)
+        (getId (Policy [PrimitivePolicy (makePreRequisite 
+                                          (Constraint (Count 5)))
+                            id1 Print]))
         [Alice]).
 simpl.
-destruct (trans_preRequisite_dec eA1 Alice (Constraint (Count 5)) [id1] [Alice]).
+destruct (trans_preRequisite_dec eA1 Alice 
+  (makePreRequisite (Constraint (Count 5))) [id1] [Alice]).
 simpl. auto.
 simpl. unfold makeResult.
 
@@ -2804,11 +2897,11 @@ simpl in n. firstorder.
 simpl.
 unfold trans_policy_PIPS.
 destruct (trans_prin_dec Alice [Alice]).
-destruct (trans_preRequisite_dec eA1 Alice TruePrq
-        (getId (Policy [PrimitivePolicy (Constraint (Count 5)) id1 Print]))
+destruct (trans_preRequisite_dec eA1 Alice (makePreRequisite TruePrq)
+        (getId (Policy [PrimitivePolicy (makePreRequisite (Constraint (Count 5))) id1 Print]))
         [Alice]).
 simpl.
-destruct (trans_preRequisite_dec eA1 Alice (Constraint (Count 5)) [id1] [Alice]).
+destruct (trans_preRequisite_dec eA1 Alice (makePreRequisite (Constraint (Count 5))) [id1] [Alice]).
 simpl. unfold makeResult.
 apply AnswersNotEqual. intuition. inversion H.
 
