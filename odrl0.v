@@ -1083,12 +1083,33 @@ Definition get_PS_From_Agreement(agr:agreement): policySet :=
 
 
 
+
+(** Example from the XML agreement in my Thesis **)
+Definition ps_xml_p1prq1:primPreRequisite := 
+  (Constraint (Principal (Single Alice))).
+Definition ps_xml_p1prq2:primPreRequisite := 
+  (Constraint (Count 2)).
+Definition ps_xml_prq:preRequisite := 
+  (PreRequisite (NewList ps_xml_p1prq1 (Single ps_xml_p1prq2))).
+
+Definition ps_xml_p1:primPolicy := 
+  (PrimitivePolicy ps_xml_prq id1 Print).
+
+Definition ps_xml_p:policy := 
+  (Policy (Single ps_xml_p1)).
+
+Definition ps_xml:primPolicySet :=
+  PIPS (PrimitiveInclusivePolicySet
+    (makePreRequisite TruePrq) ps_xml_p).
+
+Definition Axml := Agreement (NewList Alice (Single Bob)) TheReport (PPS ps_xml).
+
+Eval compute in (Axml).
+
 (** Example 2.1 **)
 
 Definition ps_21_p1:primPolicy := 
   (PrimitivePolicy (makePreRequisite (Constraint (Count  5))) id1 Print).
-
-
 
 Definition ps_21_p2prq1:primPreRequisite := 
   (Constraint (Principal (Single Alice))).
@@ -1109,6 +1130,8 @@ Definition ps_21:primPolicySet :=
 
 Definition A21 := Agreement (NewList Alice (Single Bob)) TheReport (PPS ps_21).
 		
+Eval compute in (A21).
+
 
 Definition e_21_1 : environment :=
  (ConsEnv (make_count_equality Bob id1 0)
