@@ -1230,28 +1230,29 @@ Definition ps_24_prq1:primPreRequisite :=
 Definition ps_24_prq2:primPreRequisite := 
   (Constraint (CountByPrin (NewList Alice (Single Bob)) 1)).
  
-
 Definition ps_24_prq:preRequisite := 
   (PreRequisite (NewList ps_24_prq1 (Single ps_24_prq2))).
 
 Definition ps_24:primPolicySet :=
   PIPS (PrimitiveInclusivePolicySet
-    ps_24_ps1_prq ps_24_p).
+    ps_24_prq ps_24_p).
 
-Definition A24_ps1 := Agreement (NewList Alice (Single Bob)) TheReport (PPS ps_24_ps1).
-Eval compute in (A24_ps1).
+Definition A24 := Agreement (NewList Alice (Single Bob)) TheReport (PPS ps_24).
+Eval compute in (A24).
+
+Definition e_24 : environment :=
+ (ConsEnv (make_count_equality Bob id1 0)
+   (ConsEnv (make_count_equality Bob id2 0)
+     (ConsEnv (make_count_equality Alice id1 0)
+       (SingleEnv (make_count_equality Alice id2 0))))).
 
 
+Eval compute in (trans_agreement e_24 A24 Print Alice TheReport).
 
-Definition ps_24_ps2_prq:preRequisite := 
-  (PreRequisite (Single ps_24_ps2_prq1)).
+Eval compute in (trans_agreement e_24 A24 Print Charlie TheReport).
 
-Definition ps_24_ps2:primPolicySet :=
-  PIPS (PrimitiveInclusivePolicySet
-    ps_24_ps2_prq ps_24_p).
+Eval compute in (trans_agreement e_24 A24 Display Alice TheReport).
 
-Definition A24_ps2 := Agreement (NewList Alice (Single Bob)) TheReport (PPS ps_24_ps2).
-Eval compute in (A24_ps2).
 
 (***** 3.1 *****)
 
