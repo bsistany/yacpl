@@ -1,4 +1,4 @@
-Module ODRL.
+Module ACCPL.
 
 
 Require Import Arith.
@@ -10,7 +10,7 @@ Set Implicit Arguments.
 (* Open Scope string_scope. *)
 
 
-
+(* Implementation of the never empty list *)
 Section nonemptylist.
 
 Variable X : Set.
@@ -19,7 +19,7 @@ Inductive nonemptylist : Set :=
   | Single : X -> nonemptylist
   | NewList : X -> nonemptylist -> nonemptylist.
 
-
+(* Appends one nonemptylist into another *)
 Fixpoint app_nonempty (l1 l2 : nonemptylist) : nonemptylist :=
   match l1 with
   | Single s  => NewList s l2
@@ -38,18 +38,17 @@ Definition hd (l:nonemptylist) : X :=
   | NewList s rest => s
   end.
 
-
+(* Predicate: given an element, is it in the nonemptylist *)
 Fixpoint In (a:X) (l:nonemptylist) : Prop :=
     match l with
       | Single s => s=a
       | NewList s rest => s = a \/ In a rest
     end.
-
+(* For a given element it is either in the list or it is not and that id decidable *)
+(* Adapted from the Coq standard library *)
 Theorem in_dec :
 (forall x y:X, {x = y} + {x <> y}) -> 
     forall (a:X) (l:nonemptylist), {In a l} + {~ In a l}.
-
-
 Proof.
 intros H; induction l as [| a0 l IHl].
 apply H.
@@ -64,19 +63,6 @@ End nonemptylist.
 
 Notation "x , l" := (NewList x l) (at level 60, right associativity).
 Notation "[ x ]" := (Single x).
-
-Section Fold_Nonempty.
-  Variables A B : Set.
-  Variable f : B -> A -> A.
-  Variable a0 : A.
-
-  Fixpoint fold_nonempty (l:nonemptylist B) : A :=
-    match l with
-      | Single s => f s a0
-      | NewList s rest => f s (fold_nonempty rest)
-    end.
-
-End Fold_Nonempty.
 
 Section MyPair.
   Variable X : Set.
@@ -3393,4 +3379,4 @@ simpl. unfold makeResult. auto.
 Defined.
 
 
-End ODRL.
+End ACCPL.
