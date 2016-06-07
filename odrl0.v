@@ -64,6 +64,7 @@ End nonemptylist.
 Notation "x , l" := (NewList x l) (at level 60, right associativity).
 Notation "[ x ]" := (Single x).
 
+(* Define a pair of any element called Twos *)
 Section MyPair.
   Variable X : Set.
   Variable Y : Set.
@@ -76,7 +77,7 @@ Section MyPair.
   }.
 End MyPair.
 
-
+(* Produce the cross product of two nonemptylists *)
 Section Process_Lists.
 
 Variable X : Set.
@@ -127,7 +128,7 @@ Proof.
 Defined.
 
 
-
+(* Define subject as nat and define some example subjects for DRM application *)
 Definition subject := nat.
 Definition NullSubject:subject := 100.
 Definition Alice:subject := 101.
@@ -135,16 +136,16 @@ Definition Bob:subject := 102.
 Definition Charlie:subject := 103.
 Definition Bahman:subject := 104.
 
-
-(* simplified *)
 Definition prin := nonemptylist subject.
 
+(* Define act as nat and define some example subjects for DRM application *)
 Definition act := nat.
 Definition NullAct := 300.
 Definition Play : act := 301.
 Definition Print : act := 302.
 Definition Display : act := 303.
 
+(* Define asset as nat and define some example subjects for DRM application *)
 Definition asset := nat.
 Definition NullAsset := 900.
 Definition FindingNemo : asset := 901.
@@ -154,8 +155,7 @@ Definition LoveAndPeace : asset := 904.
 Definition TheReport:asset := 905.
 Definition ebook:asset := 906.
 
-(* Definition money := string. *)
-
+(* policyId is defined as nat and define some example policyIds *)
 Definition policyId := nat.
 Definition NullId:subject := 200.
 Definition id1:policyId := 201.
@@ -163,69 +163,61 @@ Definition id2:policyId := 202.
 Definition id3:policyId := 203.
 Definition id4:policyId := 204.
 
+(* Define constraints *)
 Inductive constraint : Set :=
   | Principal : prin  -> constraint
   | Count : nat -> constraint
   | CountByPrin : prin -> nat -> constraint.
 
+(* Primitive prerequisites *)
 Inductive primPreRequisite : Set :=
   | TruePrq : primPreRequisite
   | Constraint : constraint -> primPreRequisite
   | NotCons : constraint -> primPreRequisite.
- 
+  
+(* Conjuction of primitive prerequisites *) 
 Inductive preRequisite : Set :=
   | PreRequisite : nonemptylist primPreRequisite -> preRequisite.
 
 Definition makePreRequisite (prq:primPreRequisite) : preRequisite :=
  (PreRequisite (Single prq)).
 
-
-(*
-Inductive preRequisite : Set :=
-  | TruePrq : preRequisite
-  | Constraint : constraint -> preRequisite
-  | NotCons : constraint -> preRequisite
-  | AndPrqs : nonemptylist preRequisite -> preRequisite
-  | OrPrqs : nonemptylist preRequisite -> preRequisite
-  | XorPrqs : nonemptylist preRequisite -> preRequisite.
-*)
-
-(*** Changing the policy and policySets definintion: July 1st, 2015 ***)
+(* Primitive policy *)
 Inductive primPolicy : Set :=
   | PrimitivePolicy : preRequisite -> policyId -> act -> primPolicy.
-
-Inductive andPolicy : Set :=
-  | AndPolicy : nonemptylist primPolicy -> andPolicy.
-
+  
+(* Conjunction of primitive policys *)
 Inductive policy : Set :=
   | Policy : nonemptylist primPolicy -> policy.
-
+  
+(* Primitive inclusive policy set *)
 Inductive primInclusivePolicySet : Set :=
   | PrimitiveInclusivePolicySet : preRequisite -> policy -> primInclusivePolicySet.
 
+(* Primitive exclusive policy set *)
 Inductive primExclusivePolicySet : Set :=
   | PrimitiveExclusivePolicySet : preRequisite -> policy  -> primExclusivePolicySet.
 
+(* Primitive policy set *)
 Inductive primPolicySet : Set :=
   | PIPS : primInclusivePolicySet -> primPolicySet
   | PEPS : primExclusivePolicySet -> primPolicySet.
 
-Inductive andPolicySet : Set :=
-  | AndPolicySet : nonemptylist primPolicySet -> andPolicySet.
-
+(* policy sets *)
 Inductive policySet : Set :=
   | PPS : primPolicySet -> policySet.
 
-
+(* agreements *)
 Inductive agreement : Set :=
   | Agreement : prin -> asset -> policySet -> agreement.
 
+(* Predicate: is this act in the given primitive policy *)
 Definition is_act_in_prim_policy (ac:act)(p:primPolicy) : Prop :=
   match p with 
     | PrimitivePolicy prq pid action => ac = action 
   end.
 
-
+(* Predicate: is this act in the given list of primitive policys *)
 Fixpoint is_act_in_primPolicies (ac:act)(l:nonemptylist primPolicy){struct l}  : Prop :=
   
          match l with
@@ -233,7 +225,8 @@ Fixpoint is_act_in_primPolicies (ac:act)(l:nonemptylist primPolicy){struct l}  :
 	   | NewList pp rest => (is_act_in_prim_policy ac pp) \/
                                 (is_act_in_primPolicies ac rest)
          end.
-  
+		 
+(* Predicate: is this act in the given policy *)  
 Definition is_act_in_policy (ac:act)(p:policy): Prop :=
 
   match p with
@@ -241,6 +234,7 @@ Definition is_act_in_policy (ac:act)(p:policy): Prop :=
     | Policy ppolicies => is_act_in_primPolicies ac ppolicies
 end.
 
+(* Predicate: is this act in the given primitive policy set *)
 Definition is_act_in_prim_policySet (ac:act)(pps:primPolicySet) : Prop :=
   match pps with 
     | PIPS pips => 
@@ -253,6 +247,7 @@ Definition is_act_in_prim_policySet (ac:act)(pps:primPolicySet) : Prop :=
         end
   end.
 
+(* Predicate: is this act in the given list of primitive policy sets *)
 Fixpoint is_act_in_primPolicySets (ac:act)(l:nonemptylist primPolicySet){struct l}  : Prop :=
   
   match l with
@@ -261,17 +256,20 @@ Fixpoint is_act_in_primPolicySets (ac:act)(l:nonemptylist primPolicySet){struct 
                           (is_act_in_primPolicySets ac rest)
   end.
   
+(* Predicate: is this act in the given policy set *)  
 Definition is_act_in_policySet (ac:act)(ps:policySet): Prop :=
 
   match ps with
     | PPS pps => is_act_in_prim_policySet ac pps     
 end.
 
+(* Predicate: is this act in the given agreement *)
 Definition is_act_in_agreement (ac:act)(agr: agreement) : Prop :=
   match agr with
     | Agreement pr ass ps => is_act_in_policySet ac ps
   end.
 
+(* Predicate: is this asset in the given agreement *)
 Definition is_asset_in_agreement (a: asset)(agr: agreement) : Prop :=
   match agr with
     | Agreement pr ass ps => ass = a
@@ -323,7 +321,7 @@ Inductive environment : Set :=
     it doesn't matter what that number is. The only thing that matters
     is whether the current count satisfies what the corresponding policy 
     specifies. Note that this also means we don't need to keep track of 
-    environements if we assume that are always cosistent **)
+    environements if we assume that are always consistent **)
 
 
 
@@ -420,6 +418,7 @@ Eval compute in (env_consistent e2).
 
 End Environment.
 
+(* Answers and results in response to queries *)
 Section Results.
 
 Inductive answer : Set :=
@@ -478,20 +477,7 @@ End Results.
 Section Sems.
 
 
-
-Definition eq_type := nat -> nat -> Prop.
-
-Check Twos.
-
-
-Check prod.
-
-
-
-
-
 (* is x in prin? *)
-(** Definition prin := nonemptylist subject. **)
 Fixpoint trans_prin
   (x:subject)(p: prin): Prop :=
 
@@ -585,18 +571,7 @@ apply trans_count_aux_dec. simpl.
 apply trans_count_aux_dec.
 Defined.
 
-Definition trans_count_333 (n:nat) : nat -> Prop :=
-  (fun running_total : nat => running_total < n).
 
-Definition trans_count_444 (n:nat) : Prop :=
- forall (running_total:nat), running_total < n.
-
-Definition trans_count_old2 (n:nat) : Prop :=
-  let running_total := 4 in (** this is some nat for now. 
-                                As far as proofs are concerned it 
-                                doesn't matter how we obtain it so '4' will do
-                             **)
-  running_total < n.
 
 Fixpoint trans_constraint
   (e:environment)(x:subject)(const:constraint)(IDs:nonemptylist policyId)
@@ -1351,10 +1326,6 @@ End Example4_3.
 
 Section A2.
 
-(**  getCount Alice "id1" = 5,	and see if you can prove ~(Unregulated Alice ...). **)
-
-(**  getCount Alice "id1" = 3,	and see if you can prove (Permitted Alice ...). **)
-
 Definition eA2 : environment :=
   (SingleEnv (make_count_equality Alice id1 3)).
 
@@ -1368,60 +1339,6 @@ Definition AgreeA2 := Agreement (Single Alice) TheReport psA2.
 
 Eval compute in (trans_agreement eA2 AgreeA2 Bob Print TheReport).
 
-
-(* Hypothesis AliceCount : getCount Alice "id1" = 5. *)
-(*
-Theorem SS1: 
-isPermissionGranted Alice Print TheReport (trans_agreement eA2 AgreeA2 Print Alice TheReport).
-
-Proof. 
-
-
-unfold trans_agreement.
-unfold isPermissionGranted.
-split.
-
-
-unfold permittedResult.
-simpl.
-unfold trans_policy_PIPS.
-destruct (trans_prin_dec Alice [Alice]).
-destruct (trans_preRequisite_dec eA2 Alice (Constraint (Count 5)) [id1] [Alice]).
-destruct (trans_preRequisite_dec eA2 Alice TruePrq
-        (getId (Policy [PrimitivePolicy (Constraint (Count 5)) id1 Print]))
-        [Alice]).
-simpl.
-destruct (trans_preRequisite_dec eA2 Alice (Constraint (Count 5)) [id1] [Alice]).
-simpl.
-unfold makeResult. auto.
-simpl in n. unfold trans_count in n. omega. 
-simpl in n. intuition. 
-simpl in n. unfold trans_count in n. omega.
-simpl.
-simpl in n.
-assert (Alice=Alice). auto. contradiction.
-
-unfold notPermittedResult.
-simpl.
-unfold trans_policy_PIPS.
-destruct (trans_prin_dec Alice [Alice]).
-destruct (trans_preRequisite_dec eA2 Alice TruePrq
-        (getId (Policy [PrimitivePolicy (Constraint (Count 5)) id1 Print]))
-        [Alice]).
-simpl.
-destruct (trans_preRequisite_dec eA2 Alice (Constraint (Count 5)) [id1] [Alice]).
-unfold makeResult. simpl. 
-apply AnswersNotEqual. intuition. inversion H.
-simpl in n. unfold trans_count in n. omega. 
-simpl in n. intuition. 
-simpl.
-simpl in n.
-assert (Alice=Alice). auto. contradiction.
-Qed.
-
-*)
-
-(* don't use the hypothesis. Add it directy to the Theorem statement *)
 
 Theorem BobUnregulated: 
   (trans_prin Bob (get_Prin_From_Agreement AgreeA2)) -> 
